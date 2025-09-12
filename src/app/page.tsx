@@ -1,113 +1,260 @@
-import Image from 'next/image'
+"use client";
+
+import { useEffect, useRef } from "react";
+import Link from "next/link";
+import Head from "next/head";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { HeroMarquee } from "./components/Hero";
+import MarqueeBanner from "./components/MarqueeBanner";
+import AnimatedSection from "./components/AnimatedSection";
+import { Skiper40 } from "@/components/ui/skiper-ui/skiper40";
+import ExpandOnHoverGallery from "./components/ExpandOnHoverGallery";
+import { motion } from "framer-motion";
+import { Carousel_003 } from "@/components/v1/skiper49";
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
+  const sectionsRef = useRef<HTMLDivElement[]>([]);
+  const parallaxRef = useRef<HTMLDivElement | null>(null);
+
+  const addSectionRef = (el: HTMLDivElement) => {
+    if (el && !sectionsRef.current.includes(el)) {
+      sectionsRef.current.push(el);
+    }
+  };
+
+  useEffect(() => {
+    sectionsRef.current.forEach((el) => {
+      gsap.fromTo(
+        el,
+        { opacity: 0, y: 100 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1.2,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 80%",
+          },
+        }
+      );
+    });
+
+    if (parallaxRef.current) {
+      gsap.fromTo(
+        parallaxRef.current,
+        { yPercent: -10, scale: 1 },
+        {
+          yPercent: 10,
+          scale: 1.2,
+          ease: "none",
+          scrollTrigger: {
+            trigger: parallaxRef.current,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: true,
+          },
+        }
+      );
+    }
+  }, []);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+    <>
+      {/* SEO HEAD */}
+      <Head>
+        <title>LensVision – Premium Eyewear with AI Virtual Try-On</title>
+        <meta
+          name="description"
+          content="Shop luxury eyewear with AI-powered virtual try-on. Discover men's, women's, and blue light collections at LensVision."
         />
+        <meta
+          name="keywords"
+          content="eyewear, glasses, sunglasses, blue light, AI try-on, LensVision"
+        />
+        <meta name="author" content="LensVision" />
+      </Head>
+
+      <div className="w-full bg-white text-black font-sans">
+        {/* Hero Section */}
+        <HeroMarquee />
+        <MarqueeBanner />
+        <br />
+        <br />
+
+        {/* Categories Carousel */}
+        <motion.h2
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="text-6xl md:text-5xl font-extrabold mb-12 
+                 bg-gradient-to-r from-purple-950 via-purple-800 to-purple-900 
+                 bg-clip-text text-transparent tracking-tight 
+                 font-serif drop-shadow-lg text-center"
+        >
+          Explore Our <span className="italic">Latest Collection</span>
+        </motion.h2>
+
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div className="w-full max-w-4xl overflow-hidden">
+            <Carousel_003
+              images={[
+                { src: "/assets/frame1.jpg", alt: "Men Collection" },
+                { src: "/assets/slideHome.jpg", alt: "Women Collection" },
+                { src: "/assets/slide2home.jpg", alt: "Blue Light" },
+                { src: "/assets/slide2home.jpg", alt: "Blue Light" },
+                { src: "/assets/slide2home.jpg", alt: "Blue Light" },
+                { src: "/assets/slide2home.jpg", alt: "Blue Light" },
+
+
+
+              ]}
+              showPagination
+              showNavigation
+              spaceBetween={30}
+            />
+          </div>
+        </div>
+
+        {/* Product Collection Showcase */}
+        <AnimatedSection>
+          <section
+            ref={addSectionRef}
+            className="py-32 bg-gradient-to-r from-purple-50 to-purple-100"
+          >
+            <div className="container mx-auto px-6 text-center">
+            <motion.h2
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="text-6xl md:text-5xl font-extrabold mb-12 
+                 bg-gradient-to-r from-purple-950 via-purple-800 to-purple-900 
+                 bg-clip-text text-transparent tracking-tight 
+                 font-serif drop-shadow-lg text-center"
+        >
+                Our Signature<span className="italic"> Collections</span>
+              </motion.h2>
+
+              <div className="mb-10">
+                <ExpandOnHoverGallery
+                  items={[
+                    { title: "Men", img: "/assets/homeMen.jpg", href: "/catalog/men" },
+                    { title: "Women", img: "/assets/female.jpg", href: "/catalog/women" },
+                    { title: "Blue Light", img: "/assets/bluelight.jpg", href: "/catalog/blue-light" },
+                    
+                  ]}
+                />
+              </div>
+            </div>
+          </section>
+        </AnimatedSection>
+
+        {/* Why Choose Us */}
+        <AnimatedSection>
+          <section
+            ref={addSectionRef}
+            className="py-28 bg-gray-50 text-center relative z-20"
+          >
+            <motion.h2
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="text-6xl md:text-5xl font-extrabold mb-12 
+                 bg-gradient-to-r from-purple-950 via-purple-800 to-purple-900 
+                 bg-clip-text text-transparent tracking-tight 
+                 font-serif drop-shadow-lg text-center"
+        >
+              Why Choose<span className="italic"> Lens Vision?</span>
+            </motion.h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 container mx-auto px-6">
+              {[
+                {
+                  title: "Premium Quality",
+                  desc: "Crafted with top materials for durability and elegance.",
+                },
+                {
+                  title: "Smart Technology",
+                  desc: "Blue-light filters and AI-powered try-ons.",
+                },
+                {
+                  title: "Luxury Design",
+                  desc: "Frames that tell a story of modern fashion.",
+                },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  className="p-8 bg-white rounded-2xl border border-purple-200 shadow-md hover:shadow-xl transition duration-300"
+                >
+                  <h3 className="text-2xl font-bold mb-4 text-purple-800 font-display">
+                    {item.title}
+                  </h3>
+                  <p className="text-gray-700 font-sans">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </AnimatedSection>
+
+        {/* Parallax Philosophy */}
+        <section
+          ref={addSectionRef}
+          className="relative h-screen flex items-center justify-center overflow-hidden"
+        >
+          <div
+            ref={parallaxRef}
+            className="absolute inset-0 bg-cover bg-center will-change-transform"
+            style={{ backgroundImage: "url(/assets/homeCen.jpg)" }}
+          >
+            <div className="absolute inset-0 bg-purple-900/80" />
+          </div>
+
+          <div className="relative z-10 container mx-auto px-6 max-w-4xl text-center">
+            <h2 className="text-6xl font-extrabold mb-6 text-purple-200 drop-shadow-xl tracking-tight font-display">
+              Redefining Eyewear
+            </h2>
+            <p className="text-xl text-purple-100 leading-relaxed font-sans font-light">
+              At LensVision, we don’t just make glasses. We craft experiences
+              that blend technology, fashion, and luxury into one. Every frame
+              tells a story of elegance.
+            </p>
+          </div>
+        </section>
+
+        {/* Skiper UI Links Showcase */}
+        <AnimatedSection>
+          <div className="py-14 bg-white">
+            <div className="container mx-auto px-2">
+              <Skiper40 />
+            </div>
+          </div>
+        </AnimatedSection>
+
+        {/* CTA */}
+        <AnimatedSection>
+          <section
+            ref={addSectionRef}
+            className="py-32 text-center bg-gradient-to-r from-purple-200 via-purple-100 to-indigo-100 relative z-20"
+          >
+            <h2 className="text-6xl font-extrabold mb-6 text-purple-900 tracking-tight font-display">
+              Experience Virtual Try-On Now
+            </h2>
+            <p className="text-lg text-gray-700 mb-8 max-w-2xl mx-auto font-sans font-medium">
+              Step into the future of eyewear with our cinematic, AI-powered
+              try-on experience.
+            </p>
+            <Link href="/tryon">
+              <Button className="px-10 py-6 text-lg rounded-full bg-gradient-to-r from-purple-700 to-indigo-600 hover:scale-110 transition-transform shadow-xl text-white font-semibold font-sans">
+                Start Virtual Try-On <ArrowRight className="ml-2 w-6 h-6" />
+              </Button>
+            </Link>
+          </section>
+        </AnimatedSection>
       </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+    </>
+  );
 }

@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# LensVision E-commerce with Virtual Try-On
 
-## Getting Started
+## Setup
 
-First, run the development server:
+1. Create a `.env.local` with:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+MONGODB_URL=mongodb+srv://USER:PASS@CLUSTER/dbname
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+# Stripe
+STRIPE_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+STRIPE_WEBHOOK_SECRET=whsec_...
+# NextAuth (optional admin)
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-strong-random-secret
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=change-me
+# Cloudinary (optional uploads)
+CLOUDINARY_CLOUD_NAME=your_cloud
+CLOUDINARY_UPLOAD_PRESET=unsigned_preset
+# Seed
+SEED_TOKEN=dev-seed-secret
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies and run dev:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+3. Seed sample products (endpoint):
 
-## Learn More
+```
+curl -X POST http://localhost:3000/api/dev/seed -H "x-seed-token: dev-seed-secret"
+```
 
-To learn more about Next.js, take a look at the following resources:
+Or manually via API:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+POST /api/products
+{
+  "name": "Aviator",
+  "price": 79.99,
+  "image": "/assets/products/sunglasses1.jpg",
+  "overlayImage": "/assets/products/sunglasses1.png",
+  "category": "sunglasses",
+  "stock": 10
+}
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+## APIs
+- `GET /api/products` – list products
+- `POST /api/products` – create product
+- `GET /api/products/:id` – get product
+- `PUT /api/products/:id` – update product
+- `DELETE /api/products/:id` – delete product
+- `POST /api/orders` – create order from cart
+- `POST /api/checkout` – create Stripe Checkout Session
+- `POST /api/webhooks/stripe` – Stripe webhook endpoint
+- `POST /api/upload` – Cloudinary upload (data URL)
+- `POST /api/dev/seed` – seed demo products (x-seed-token required)
 
-## Deploy on Vercel
+## Webhook setup (Stripe)
+- Run `stripe listen --forward-to localhost:3000/api/webhooks/stripe`
+- Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## Notes
+- Cart is persisted in localStorage.
+- Virtual try-on uses `face-api.js`; models are served from `/public/models`.
+- For Stripe, set `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_SITE_URL`, and `STRIPE_WEBHOOK_SECRET` for webhooks.
+- For uploads, create an unsigned preset in Cloudinary and set `CLOUDINARY_*` vars.
+- If enabling auth/admin, configure NextAuth variables above.
