@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   },
 };
 
-// ✅ Move viewport out of metadata
+// ✅ Viewport config alag rakhna hai
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -54,11 +54,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`${inter.className} bg-gray-50 text-gray-900 antialiased flex flex-col min-h-screen`}
       >
         <Providers>
-          {/* Header */}
+          {/* ✅ Header always on top */}
           <Header />
-          {/* Main Content */}
-          <main className="flex-1">{children}</main>
-          {/* Footer */}
+
+          {/* ✅ Main takes remaining space */}
+          <main className="flex-grow">{children}</main>
+
+          {/* ✅ Footer always at bottom */}
           <Footer />
         </Providers>
       </body>

@@ -38,7 +38,6 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/90 border-b border-gray-200/70 shadow-sm">
-      
       {/* 🔹 Top Bar */}
       <div className="bg-gradient-to-r from-purple-950 via-purple-900 to-pink-600 text-white text-xs sm:text-sm">
         <div className="container mx-auto px-4 flex justify-between items-center h-8">
@@ -88,7 +87,6 @@ export default function Header() {
       {/* 🔹 Main Header */}
       <div className="container mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
-          
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <VirtualTryOnLogo />
@@ -207,7 +205,7 @@ export default function Header() {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed right-0 top-0 bottom-0 w-64 bg-white border-l shadow-xl p-6 md:hidden z-50 overflow-y-auto"
+            className="fixed right-0 top-0 bottom-0 w-64 h-full bg-white border-l shadow-xl p-6 md:hidden z-50 overflow-y-auto"
           >
             <nav className="flex flex-col space-y-6 mt-8">
               {navigation.map((item) =>
