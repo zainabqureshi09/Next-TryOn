@@ -196,59 +196,113 @@ export default function Header() {
           />
         )}
       </AnimatePresence>
+{/* 🔹 Mobile Menu Panel */}
+<AnimatePresence>
+  {isMenuOpen && (
+    <motion.div
+      initial={{ x: "100%" }}
+      animate={{ x: 0 }}
+      exit={{ x: "100%" }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className="fixed right-0 top-0 bottom-0 w-72 h-full bg-white shadow-2xl md:hidden z-50 flex flex-col"
+    >
+      {/* 🔹 Header (Logo + Close Button) */}
+      <div className="flex  items-center justify-between border-b px-6 py-4">
+        <Link
+          href="/"
+          onClick={() => setIsMenuOpen(false)}
+          className="font-bold text-xl text-pink-600"
+        >
+          LensVision
+        </Link>
+        <button
+          onClick={() => setIsMenuOpen(false)}
+          className="text-gray-600 hover:text-black transition"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      </div>
 
-      {/* 🔹 Mobile Menu Panel */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed right-0 top-0 bottom-0 w-64 h-full bg-white border-l shadow-xl p-6 md:hidden z-50 overflow-y-auto"
-          >
-            <nav className="flex flex-col space-y-6 mt-8">
-              {navigation.map((item) =>
-                item.children ? (
-                  <div key={item.name} className="space-y-2">
-                    <p className="text-lg font-semibold">{item.name}</p>
-                    <p className="text-xs uppercase text-gray-500 pl-3">Shop</p>
-                    <div className="pl-3 space-y-2">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.name}
-                          href={child.href}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={`block text-sm ${
-                            pathname === child.href
-                              ? "text-pink-600"
-                              : "text-gray-600 hover:text-black"
-                          }`}
-                        >
-                          {child.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setIsMenuOpen(false)}
-                    className={`text-lg font-medium ${
-                      pathname === item.href
-                        ? "text-pink-600"
-                        : "text-gray-600 hover:text-black"
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                )
-              )}
-            </nav>
-          </motion.div>
+      {/* 🔹 Navigation (no scroll) */}
+      <motion.nav
+        className="flex-1 bg-white px-6 py-6 space-y-6"
+        initial="hidden"
+        animate="show"
+        variants={{
+          hidden: {},
+          show: {
+            transition: { staggerChildren: 0.07 },
+          },
+        }}
+      >
+        {navigation.map((item) =>
+          item.children ? (
+            <motion.div
+              key={item.name}
+              variants={{
+                hidden: { opacity: 0, x: 30 },
+                show: { opacity: 1, x: 0 },
+              }}
+              className="space-y-2"
+            >
+              <details className="group">
+                <summary className="flex items-center justify-between cursor-pointer text-lg font-semibold text-gray-800 hover:text-pink-600 transition">
+                  {item.name}
+                  <ChevronDown className="w-4 h-4 text-gray-500 group-open:rotate-180 transition-transform" />
+                </summary>
+                <div className="pl-4 mt-2 space-y-2">
+                  {item.children.map((child) => (
+                    <Link
+                      key={child.name}
+                      href={child.href}
+                      onClick={() => setIsMenuOpen(false)}
+                      className={`block text-sm rounded-md px-2 py-1 transition ${
+                        pathname === child.href
+                          ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      {child.name}
+                    </Link>
+                  ))}
+                </div>
+              </details>
+            </motion.div>
+          ) : (
+            <motion.div
+              key={item.name}
+              variants={{
+                hidden: { opacity: 0, x: 30 },
+                show: { opacity: 1, x: 0 },
+              }}
+            >
+              <Link
+                href={item.href}
+                onClick={() => setIsMenuOpen(false)}
+                className={`block text-lg font-medium transition ${
+                  pathname === item.href
+                    ? "text-pink-600"
+                    : "text-gray-700 hover:text-black"
+                }`}
+              >
+                {item.name}
+              </Link>
+            </motion.div>
+          )
         )}
-      </AnimatePresence>
+      </motion.nav>
+
+      {/* 🔹 Footer (Language + Contact) */}
+      <div className="border-t bg-white px-6 py-4 space-y-3 text-sm text-gray-600">
+        
+        <p className="text-xs text-gray-500">
+          © 2025 LensVision. All rights reserved.
+        </p>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
     </header>
   );
 }
