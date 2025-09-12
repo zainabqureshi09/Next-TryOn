@@ -1,7 +1,7 @@
-import VirtualTryOn from "@/app/components/VirtualTryon";
 import { Product as ProductType } from "@/types";
 import AddToCartButton from "@/app/components/AddToCartButton";
 import Link from "next/link";
+import VirtualTryOn from "@/app/components/VirtualTryon";
 
 async function getProduct(id: string) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/products/${id}`, {
@@ -63,7 +63,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           )}
 
           <div className="mt-6">
-            <VirtualTryOn productImage={product.overlayImage || product.image || ""} />
+            <VirtualTryOn productImage={product.overlayImage || product.image || ""} useCamera={false} userImageSrc={null} scaleFactor={0} verticalOffset={0} />
           </div>
         </div>
 

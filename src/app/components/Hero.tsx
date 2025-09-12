@@ -46,19 +46,23 @@ export function HeroMarquee() {
     <section className="relative min-h-screen flex items-center justify-start overflow-hidden bg-black">
       {/* Background */}
       {currentColorway.type === "video" ? (
-        <motion.video
+        <motion.div
           key={currentColorway.id}
-          className="absolute inset-0 w-full h-full object-cover z-0"
-          autoPlay
-          muted
-          loop
-          playsInline
+          className="absolute inset-0 w-full h-full z-0 overflow-hidden"
           initial={{ scale: 1.05 }}
           animate={{ scale: 1 }}
           transition={{ duration: 1.2, ease: "easeOut" }}
         >
-          <source src={currentColorway.hero} type="video/mp4" />
-        </motion.video>
+          <video
+            className="w-full h-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+          >
+            <source src={currentColorway.hero} type="video/mp4" />
+          </video>
+        </motion.div>
       ) : (
         <motion.div
           key={currentColorway.id}
@@ -102,17 +106,15 @@ export function HeroMarquee() {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/product-cart" passHref>
+            <Link href="/product-cart">
               <Button
-                size="xl"
                 className="w-full sm:w-auto bg-purple-950/70 backdrop-blur-md text-white font-semibold border border-white/20 rounded-full px-8 py-4 hover:bg-transparent hover:text-white transition-colors duration-300"
               >
                 Shop Now
               </Button>
             </Link>
-            <Link href="/contact" passHref>
+            <Link href="/contact">
               <Button
-                size="xl"
                 className="w-full sm:w-auto bg-white/10 text-white font-light border border-white/30 rounded-full px-8 py-4 hover:bg-pink-600/80 hover:text-white transition-colors duration-300"
               >
                 Contact Us

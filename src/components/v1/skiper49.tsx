@@ -3,13 +3,19 @@
 import { motion } from "framer-motion";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import React from "react";
-import { Autoplay, EffectCoverflow, Navigation, Pagination } from "swiper/modules";
+import Image from "next/image";
+import {
+  Autoplay,
+  EffectCoverflow,
+  Navigation,
+  Pagination,
+} from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+
+import "swiper/css";
 import "swiper/css/effect-coverflow";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
-import "swiper/css";
-import "swiper/css/effect-cards";
 
 import { cn } from "@/lib/utils";
 
@@ -30,22 +36,20 @@ const Skiper49 = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#f5f4f3] px-4">
-      <Carousel_003 images={images} showPagination loop autoplay showNavigation />
+      <Carousel_003
+        images={images}
+        showPagination
+        loop
+        autoplay
+        showNavigation
+      />
     </div>
   );
 };
 
 export { Skiper49 };
 
-const Carousel_003 = ({
-  images,
-  className,
-  showPagination = false,
-  showNavigation = false,
-  loop = true,
-  autoplay = false,
-  spaceBetween = 0,
-}: {
+interface CarouselProps {
   images: { src: string; alt: string }[];
   className?: string;
   showPagination?: boolean;
@@ -53,6 +57,16 @@ const Carousel_003 = ({
   loop?: boolean;
   autoplay?: boolean;
   spaceBetween?: number;
+}
+
+const Carousel_003: React.FC<CarouselProps> = ({
+  images,
+  className,
+  showPagination = false,
+  showNavigation = false,
+  loop = true,
+  autoplay = false,
+  spaceBetween = 0,
 }) => {
   const css = `
     .Carousal_003 {
@@ -75,6 +89,7 @@ const Carousel_003 = ({
       background-color: #000 !important;
     }
   `;
+
   return (
     <motion.div
       initial={{ opacity: 0, translateY: 20 }}
@@ -101,9 +116,9 @@ const Carousel_003 = ({
               : false
           }
           effect="coverflow"
-          grabCursor={true}
+          grabCursor
           slidesPerView="auto"
-          centeredSlides={true}
+          centeredSlides
           loop={loop}
           coverflowEffect={{
             rotate: 40,
@@ -126,13 +141,17 @@ const Carousel_003 = ({
         >
           {images.map((image, index) => (
             <SwiperSlide key={index}>
-              <img
-                className="h-72 w-full object-cover md:h-96"
+              <Image
                 src={image.src}
                 alt={image.alt}
+                width={500}
+                height={400}
+                className="h-72 w-full object-cover md:h-96"
+                priority
               />
             </SwiperSlide>
           ))}
+
           {showNavigation && (
             <div>
               <div className="swiper-button-next after:hidden">

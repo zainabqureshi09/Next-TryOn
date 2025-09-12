@@ -1,10 +1,12 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth"; // ✅ make sure this file exports authOptions
 import dbConnect from "@/lib/dbConnect";
 import Order from "@/lib/models/Order";
 
 export default async function AccountOrdersPage() {
-  const session = await getServerSession(authOptions as any);
+  // ✅ no need for "as any", since authOptions is typed properly
+  const session = await getServerSession(authOptions);
+
   if (!session?.user?.email) {
     return (
       <section className="max-w-3xl mx-auto px-6 py-12">
@@ -15,11 +17,16 @@ export default async function AccountOrdersPage() {
   }
 
   await dbConnect();
-  const orders = await Order.find({ customerEmail: session.user.email }).sort({ createdAt: -1 }).lean();
+
+  // ✅ make sure "customerEmail" exists in your Order schema
+  const orders = await Order.find({ customerEmail: session.user.email })
+    .sort({ createdAt: -1 })
+    .lean();
 
   return (
     <section className="max-w-4xl mx-auto px-6 py-12">
       <h1 className="text-2xl font-bold mb-6">Your Orders</h1>
+
       {orders.length === 0 ? (
         <p>No orders yet.</p>
       ) : (
@@ -35,10 +42,14 @@ export default async function AccountOrdersPage() {
             </thead>
             <tbody>
               {orders.map((o: any) => (
-                <tr key={o._id} className="border-t">
-                  <td className="py-2 px-3">{new Date(o.createdAt).toLocaleString()}</td>
-                  <td className="py-2 px-3">{o.items?.length || 0}</td>
-                  <td className="py-2 px-3">${(o.subtotal || 0).toFixed(2)}</td>
+                <tr key={o._id.toString()} className="border-t">
+                  <td className="py-2 px-3">
+                    {new Date(o.createdAt).toLocaleString()}
+                  </td>
+                  <td className="py-2 px-3">{o.items?.length ?? 0}</td>
+                  <td className="py-2 px-3">
+                    ${(o.subtotal ?? 0).toFixed(2)}
+                  </td>
                   <td className="py-2 px-3">{o.status}</td>
                 </tr>
               ))}
@@ -49,4 +60,3 @@ export default async function AccountOrdersPage() {
     </section>
   );
 }
-
