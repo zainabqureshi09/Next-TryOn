@@ -10,7 +10,6 @@ import { ArrowRight } from "lucide-react";
 import { HeroMarquee } from "./components/Hero";
 import MarqueeBanner from "./components/MarqueeBanner";
 import AnimatedSection from "./components/AnimatedSection";
-import { Skiper40 } from "@/components/ui/skiper-ui/skiper40";
 import ExpandOnHoverGallery from "./components/ExpandOnHoverGallery";
 import { motion } from "framer-motion";
 import { Carousel_003 } from "@/components/v1/skiper49";
@@ -225,15 +224,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Skiper UI Links Showcase */}
-        <AnimatedSection>
-          <div className="py-14 bg-white">
-            <div className="container mx-auto px-2">
-              <Skiper40 />
-            </div>
-          </div>
-        </AnimatedSection>
-
+        
         {/* CTA */}
         <AnimatedSection>
           <section
