@@ -3,8 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FaFacebookF, FaInstagram, FaTwitter, FaLinkedinIn } from "react-icons/fa";
+import { useTranslation } from "@/hooks/use-translation"; // fixed import
 
 const Footer = () => {
+  const { t } = useTranslation();
+  
   return (
     <footer className="bg-gradient-to-br from-purple-950 via-purple-900 to-indigo-300 text-white py-16 font-playfair border-t border-white/10">
       <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 px-6">
@@ -15,8 +18,7 @@ const Footer = () => {
             LensVision
           </h3>
           <p className="text-sm text-purple-200/80 leading-relaxed max-w-sm">
-            Experience the future of eyewear shopping with our{" "}
-            <span className="text-white font-medium">AI-powered virtual try-on</span> technology.
+            {t('footer.brandDesc')}
           </p>
 
           {/* Social Icons */}
@@ -39,15 +41,14 @@ const Footer = () => {
         {/* Quick Links */}
         <div>
           <h4 className="text-lg mb-5 text-white uppercase tracking-wider font-semibold border-b border-purple-400/30 pb-2">
-            Quick Links
+            {t('footer.quickLinks')}
           </h4>
           <ul className="space-y-3">
             {[
-              { name: "Home", link: "/" },
-              { name: "Shop", link: "/shop" },
-              { name: "Try-On", link: "/tryon" },
-              { name: "Account", link: "/account" },
-              { name: "About", link: "/about" },
+              { name: t('nav.home'), link: "/" },
+              { name: t('nav.shop'), link: "/shop" },
+              { name: t('nav.tryon'), link: "/tryon" },
+              { name: t('nav.about'), link: "/about" },
             ].map((item) => (
               <li key={item.name}>
                 <Link href={item.link} className="text-purple-200 hover:text-white transition-colors duration-300 hover:underline underline-offset-4">
@@ -61,7 +62,7 @@ const Footer = () => {
         {/* Legal Links */}
         <div>
           <h4 className="text-lg mb-5 text-white uppercase tracking-wider font-semibold border-b border-purple-400/30 pb-2">
-            Information
+            {t('footer.support')}
           </h4>
           <ul className="space-y-3">
             {[
@@ -82,7 +83,7 @@ const Footer = () => {
         {/* Contact */}
         <div>
           <h4 className="text-lg mb-5 text-white uppercase tracking-wider font-semibold border-b border-purple-400/30 pb-2">
-            Contact Us
+            {t('nav.contact')}
           </h4>
           <p className="text-sm text-purple-200/80">📧 support@lensvision.com</p>
           <p className="text-sm text-purple-200/80">📞 +1-800-LENS-VISION</p>
@@ -93,7 +94,7 @@ const Footer = () => {
       <div className="border-t border-white/10 mt-10 pt-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between px-6">
           <p className="text-xs text-purple-200/70 tracking-wide">
-            &copy; {new Date().getFullYear()} LensVision. All rights reserved.
+            {t('footer.copyright')}
           </p>
           <div className="flex space-x-4 mt-4 md:mt-0">
             <Image src="/assets/visa.png" alt="Visa" height={24} width={48} className="transition" />

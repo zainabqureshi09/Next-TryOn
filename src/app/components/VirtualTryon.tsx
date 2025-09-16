@@ -19,8 +19,10 @@ export default function VirtualTryOn({
 }: VirtualTryOnProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
+  const overlayRef = useRef<HTMLImageElement | null>(null);
+  const animRef = useRef<number>();
 
+  // Start camera
   useEffect(() => {
     let stream: MediaStream;
 
@@ -44,6 +46,7 @@ export default function VirtualTryOn({
     };
   }, [useCamera]);
 
+  // Rendering
   useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx || !canvasRef.current) return;
@@ -52,54 +55,67 @@ export default function VirtualTryOn({
       if (!ctx || !canvasRef.current) return;
       ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
+      // Draw background (camera or uploaded image)
       if (useCamera && videoRef.current) {
-        ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.drawImage(
+          videoRef.current,
+          0,
+          0,
+          canvasRef.current.width,
+          canvasRef.current.height
+        );
       } else if (userImageSrc) {
-        const img = new Image();
-        img.src = userImageSrc;
-        img.onload = () => {
-          ctx.drawImage(img, 0, 0, canvasRef.current!.width, canvasRef.current!.height);
+        const bgImg = new Image();
+        bgImg.src = userImageSrc;
+        bgImg.onload = () => {
+          ctx.drawImage(
+            bgImg,
+            0,
+            0,
+            canvasRef.current!.width,
+            canvasRef.current!.height
+          );
         };
       }
 
-      if (imgRef.current) {
-        const w = imgRef.current.width * scaleFactor;
-        const h = imgRef.current.height * scaleFactor;
+      // Draw overlay (glasses/frame) only if loaded correctly
+      if (
+        overlayRef.current instanceof HTMLImageElement &&
+        overlayRef.current.complete &&
+        overlayRef.current.naturalWidth > 0
+      ) {
+        const w = overlayRef.current.naturalWidth * scaleFactor;
+        const h = overlayRef.current.naturalHeight * scaleFactor;
         const x = (canvasRef.current.width - w) / 2;
         const y = (canvasRef.current.height - h) / 2 + verticalOffset;
-        ctx.drawImage(imgRef.current, x, y, w, h);
+        ctx.drawImage(overlayRef.current, x, y, w, h);
       }
 
-      requestAnimationFrame(render);
+      animRef.current = requestAnimationFrame(render);
     };
 
     render();
+
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
   }, [useCamera, userImageSrc, scaleFactor, verticalOffset]);
 
   return (
     <div className="relative w-full flex justify-center">
       {useCamera && (
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          className="hidden"
-        />
+        <video ref={videoRef} autoPlay muted playsInline className="hidden" />
       )}
+
       <canvas
         ref={canvasRef}
         width={640}
         height={480}
         className="border rounded-xl"
       />
-      {/* Hidden frame overlay */}
-      <img
-        ref={imgRef}
-        src={productImage}
-        alt="frame overlay"
-        className="hidden"
-      />
+
+      {/* Hidden overlay frame (glasses) */}
+      <img ref={overlayRef} src={productImage} alt="overlay" className="hidden" />
     </div>
   );
 }

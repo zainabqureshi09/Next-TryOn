@@ -12,3 +12,9 @@ export default function AnimatedSection({ children, className }: PropsWithChildr
   );
 }
 
+
+
+
+
+
+

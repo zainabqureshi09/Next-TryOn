@@ -4,6 +4,7 @@ import "./globals.css";
 import Footer from "./components/Footer";
 import Header from "./components/Navbar";
 import Providers from "./providers";
+import { CartProvider } from "@/contexts/CartContext";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -54,14 +55,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`${inter.className} bg-gray-50 text-gray-900 antialiased flex flex-col min-h-screen`}
       >
         <Providers>
-          {/* ✅ Header always on top */}
-          <Header />
+          <CartProvider>
+            {/* ✅ Header always on top */}
+            <Header />
 
-          {/* ✅ Main takes remaining space */}
-          <main className="flex-grow">{children}</main>
+            {/* ✅ Main takes remaining space */}
+            <main className="flex-grow">{children}</main>
 
-          {/* ✅ Footer always at bottom */}
-          <Footer />
+            {/* ✅ Footer always at bottom */}
+            <Footer />
+          </CartProvider>
         </Providers>
       </body>
     </html>

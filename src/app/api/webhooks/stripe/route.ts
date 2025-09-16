@@ -7,11 +7,14 @@ export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature");
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) return NextResponse.json({ error: "No webhook secret" }, { status: 500 });
+  if (!sig) return NextResponse.json({ error: "Missing stripe-signature" }, { status: 400 });
 
   try {
     const rawBody = await req.text();
     const Stripe = (await import("stripe")).default;
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, { apiVersion: "2024-06-20" });
+    const secretKey = process.env.STRIPE_SECRET_KEY as string | undefined;
+    if (!secretKey) return NextResponse.json({ error: "Stripe not configured" }, { status: 500 });
+    const stripe = new Stripe(secretKey, { apiVersion: "2024-06-20" });
     const event = stripe.webhooks.constructEvent(rawBody, sig as string, secret);
 
     if (event.type === "checkout.session.completed") {

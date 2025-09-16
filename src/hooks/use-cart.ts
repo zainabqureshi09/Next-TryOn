@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Product } from "@/types";
-
-export type CartItem = Product & { qty: number };
+import { Product, CartItem } from "@/types";
 
 type CartState = {
   items: CartItem[];

@@ -17,3 +17,9 @@ const Snapshot = (models.Snapshot as mongoose.Model<ISnapshot>) || model<ISnapsh
 
 export default Snapshot;
 
+
+
+
+
+
+

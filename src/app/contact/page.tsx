@@ -7,8 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Phone, Mail, MapPin } from "lucide-react";
+import useTranslation from "@/hooks/use-translation";
 
 export default function ContactPage() {
+  const { t } = useTranslation();
+  
   return (
     <>
       {/* SEO HEAD */}
@@ -34,7 +37,7 @@ export default function ContactPage() {
             transition={{ duration: 0.6 }}
             className="text-4xl md:text-5xl font-extrabold font-poppins tracking-tight text-purple-900"
           >
-            Get in Touch
+            {t('contact.title')}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0 }}
@@ -42,9 +45,7 @@ export default function ContactPage() {
             transition={{ delay: 0.3, duration: 0.6 }}
             className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed"
           >
-            We&apos;d love to hear from you! Whether you have a question about
-            products, need support, or just want to say hi — our team is ready
-            to assist.
+            {t('contact.subtitle')}
           </motion.p>
         </section>
 
@@ -59,17 +60,17 @@ export default function ContactPage() {
           {[
             {
               icon: <Phone className="w-8 h-8 text-purple-600" />,
-              title: "Call Us",
+              title: t('contact.callUs'),
               text: "+92 300 1234567",
             },
             {
               icon: <Mail className="w-8 h-8 text-pink-600" />,
-              title: "Email Us",
+              title: t('contact.emailUs'),
               text: "support@lensvision.com",
             },
             {
               icon: <MapPin className="w-8 h-8 text-indigo-600" />,
-              title: "Visit Us",
+              title: t('contact.visitUs'),
               text: "123 Vision Street, Lahore, PK",
             },
           ].map((item, idx) => (
@@ -103,7 +104,7 @@ export default function ContactPage() {
             transition={{ duration: 0.6 }}
             className="text-3xl font-bold text-center mb-10 font-poppins text-gray-900"
           >
-            Send Us a Message
+            {t('contact.sendMessage')}
           </motion.h2>
 
           <Card className="rounded-2xl shadow-md bg-white">
@@ -112,31 +113,31 @@ export default function ContactPage() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <Input
                     name="name"
-                    placeholder="Your Name"
-                    aria-label="Your Name"
+                    placeholder={t('contact.yourName')}
+                    aria-label={t('contact.yourName')}
                     className="rounded-xl font-inter"
                     required
                   />
                   <Input
                     name="email"
                     type="email"
-                    placeholder="Your Email"
-                    aria-label="Your Email"
+                    placeholder={t('contact.yourEmail')}
+                    aria-label={t('contact.yourEmail')}
                     className="rounded-xl font-inter"
                     required
                   />
                 </div>
                 <Input
                   name="subject"
-                  placeholder="Subject"
-                  aria-label="Subject"
+                  placeholder={t('contact.subject')}
+                  aria-label={t('contact.subject')}
                   className="rounded-xl font-inter"
                 />
                 <Textarea
                   name="message"
-                  placeholder="Your Message"
+                  placeholder={t('contact.yourMessage')}
                   rows={5}
-                  aria-label="Your Message"
+                  aria-label={t('contact.yourMessage')}
                   className="rounded-xl font-inter"
                   required
                 />
@@ -145,7 +146,7 @@ export default function ContactPage() {
                   type="submit"
                   className="w-full rounded-xl bg-purple-600 hover:bg-purple-700 font-poppins text-lg"
                 >
-                  Send Message
+                  {t('contact.sendBtn')}
                 </Button>
               </form>
             </CardContent>

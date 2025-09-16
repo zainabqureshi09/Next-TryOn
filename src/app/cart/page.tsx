@@ -1,10 +1,13 @@
 "use client";
 
 import useCart from "@/hooks/use-cart";
+import useTranslation from "@/hooks/use-translation";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function CartPage() {
   const { items, addItem, decrement, removeItem, clear, subtotal } = useCart();
+  const { t } = useTranslation();
 
   const checkout = async () => {
     const res = await fetch("/api/checkout", {
@@ -23,13 +26,13 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <section className="max-w-4xl mx-auto px-6 py-16 text-center">
-        <h1 className="text-3xl font-bold mb-4">Your cart is empty</h1>
+        <h1 className="text-3xl font-bold mb-4">{t('cart.empty')}</h1>
         <p className="text-gray-600 mb-8">Find frames you love and try them on.</p>
         <Link
-          href="/shop"
+          href="/catalog"
           className="inline-block px-6 py-3 bg-purple-700 text-white rounded-lg hover:bg-purple-800"
         >
-          Go to Shop
+          {t('cart.goToShop')}
         </Link>
       </section>
     );
@@ -37,15 +40,20 @@ export default function CartPage() {
 
   return (
     <section className="max-w-5xl mx-auto px-6 py-12">
-      <h1 className="text-3xl font-bold text-purple-800 mb-8">Your Cart</h1>
+      <h1 className="text-3xl font-bold text-purple-800 mb-8">{t('cart.title')}</h1>
 
       <div className="space-y-6">
         {items.map((item) => (
           <div key={item.id} className="flex items-center gap-4 border p-4 rounded-xl">
             {/* thumbnail */}
             {item.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-lg" />
+              <Image 
+                src={item.image} 
+                alt={item.name} 
+                width={80}
+                height={80}
+                className="w-20 h-20 object-cover rounded-lg" 
+              />
             ) : (
               <div className="w-20 h-20 bg-gray-100 rounded-lg" />
             )}
@@ -55,9 +63,9 @@ export default function CartPage() {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => decrement(item.id)}
+                onClick={() => decrement(item.id || item._id || '')}
                 className="px-3 py-1 border rounded-lg hover:bg-gray-50"
-                aria-label={`Decrease quantity of ${item.name}`}
+                aria-label={`${t('cart.decrease')} ${item.name}`}
               >
                 −
               </button>
@@ -65,16 +73,16 @@ export default function CartPage() {
               <button
                 onClick={() => addItem(item)}
                 className="px-3 py-1 border rounded-lg hover:bg-gray-50"
-                aria-label={`Increase quantity of ${item.name}`}
+                aria-label={`${t('cart.increase')} ${item.name}`}
               >
                 +
               </button>
             </div>
             <button
-              onClick={() => removeItem(item.id)}
+              onClick={() => removeItem(item.id || item._id || '')}
               className="px-3 py-1 text-sm text-red-600 hover:underline"
             >
-              Remove
+              {t('cart.remove')}
             </button>
           </div>
         ))}
@@ -82,10 +90,10 @@ export default function CartPage() {
 
       <div className="mt-10 flex items-center justify-between">
         <button onClick={clear} className="text-sm text-gray-600 hover:underline">
-          Clear cart
+          {t('cart.clear')}
         </button>
         <div className="text-right">
-          <p className="text-lg">Subtotal</p>
+          <p className="text-lg">{t('cart.subtotal')}</p>
           <p className="text-2xl font-extrabold text-purple-800">
             ${subtotal().toFixed(2)}
           </p>
@@ -93,7 +101,7 @@ export default function CartPage() {
             onClick={checkout}
             className="mt-4 px-6 py-3 bg-purple-700 text-white rounded-lg hover:bg-purple-800"
           >
-            Proceed to Checkout
+            {t('cart.checkout')}
           </button>
         </div>
       </div>

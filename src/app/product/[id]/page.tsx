@@ -1,14 +1,23 @@
+"use client";
+
 import { Product as ProductType } from "@/types";
 import AddToCartButton from "@/app/components/AddToCartButton";
 import Link from "next/link";
-import VirtualTryOn from "@/app/components/VirtualTryon";
+import Image from "next/image";
+import VirtualTryOn from "@/app/components/VirtualTryOn";
+import useTranslation from "@/hooks/use-translation";
+import { useEffect, useState } from "react";
 
 async function getProduct(id: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/products/${id}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const res = await fetch(`/api/products/${id}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error("Error fetching product:", err);
+    return null;
+  }
 }
 
 interface ProductPageProps {
@@ -25,21 +34,39 @@ function inferFrameId(overlayUrl?: string | null) {
   return undefined;
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
-  const product = await getProduct(params.id);
-  if (!product) return <p>Product not found</p> as any;
+export default function ProductPage({ params }: ProductPageProps) {
+  const { t } = useTranslation();
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    getProduct(params.id).then((data) => {
+      setProduct(data);
+      setLoading(false);
+    });
+  }, [params.id]);
+
+  if (loading) return <p>{t("common.loading")}</p>;
+  if (!product) return <p>Product not found</p>;
+
+  // Normalize for cart system
   const normalized: ProductType = {
     id: product._id || product.id,
     name: product.name,
-    price: product.price,
-    image: product.image || null,
+    price: Number(product.price),
+    image: product.image || product.secure_url || null,
     overlayImage: product.overlayImage || null,
   };
 
-  const images: string[] = Array.isArray(product.images) && product.images.length > 0
-    ? product.images
-    : [product.image].filter(Boolean);
+  // Handle multiple / single images from DB
+  const images: string[] =
+    Array.isArray(product.images) && product.images.length > 0
+      ? product.images
+      : product.image
+      ? [product.image]
+      : product.secure_url
+      ? [product.secure_url]
+      : [];
 
   const frameId = inferFrameId(product.overlayImage || product.image);
 
@@ -48,31 +75,55 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <div className="grid md:grid-cols-2 gap-10">
         {/* Left: Gallery + TryOn */}
         <div>
-          {images?.[0] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={images[0]} alt={product.name} className="w-full h-96 object-cover rounded-xl border" />
-          ) : null}
+          {images.length > 0 && (
+            <Image
+              src={images[0]}
+              alt={product.name || "Product"}
+              width={600}
+              height={400}
+              className="w-full h-96 object-cover rounded-xl border"
+              priority
+            />
+          )}
 
-          {images && images.length > 1 && (
+          {images.length > 1 && (
             <div className="mt-3 grid grid-cols-5 gap-2">
               {images.slice(1).map((src: string, i: number) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img key={i} src={src} alt={`${product.name} ${i + 2}`} className="h-20 w-full object-cover rounded-md border" />
+                <Image
+                  key={i}
+                  src={src}
+                  alt={`${product.name || "Product"} ${i + 2}`}
+                  width={120}
+                  height={80}
+                  className="h-20 w-full object-cover rounded-md border"
+                />
               ))}
             </div>
           )}
 
           <div className="mt-6">
-            <VirtualTryOn productImage={product.overlayImage || product.image || ""} useCamera={false} userImageSrc={null} scaleFactor={0} verticalOffset={0} />
+            <VirtualTryOn
+              productImage={product.overlayImage || product.image || ""}
+              useCamera={false}
+              userImageSrc={null}
+              scaleFactor={1}
+              verticalOffset={0}
+            />
           </div>
         </div>
 
         {/* Right: Info */}
         <div>
-          <h1 className="text-3xl font-bold text-purple-700 mb-4">{product.name}</h1>
-          <p className="text-xl font-semibold text-purple-900 mb-4">${product.price.toFixed(2)}</p>
+          <h1 className="text-3xl font-bold text-purple-700 mb-4">
+            {product.name}
+          </h1>
+          <p className="text-xl font-semibold text-purple-900 mb-4">
+            ${Number(product.price).toFixed(2)}
+          </p>
           {product.description && (
-            <p className="text-gray-700 mb-6 leading-relaxed">{product.description}</p>
+            <p className="text-gray-700 mb-6 leading-relaxed">
+              {product.description}
+            </p>
           )}
 
           <div className="flex items-center gap-3">
@@ -82,7 +133,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 href={`/tryon?overlay=${frameId}`}
                 className="px-5 py-2 rounded-lg border border-purple-700 text-purple-700 hover:bg-purple-50"
               >
-                Try-On
+                {t("product.tryOn")}
               </Link>
             )}
           </div>

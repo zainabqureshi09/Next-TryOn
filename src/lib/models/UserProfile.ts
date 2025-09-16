@@ -22,7 +22,7 @@ const UserProfileSchema = new Schema<IUserProfile>({
   country: String,
 }, { timestamps: true });
 
-const UserProfile = (models.UserProfile as mongoose.Model<IUserProfile>) || model<IUserProfile>("UserProfile", UserProfileSchema);
+const UserProfile = models.UserProfile || model<IUserProfile>("UserProfile", UserProfileSchema);
 
 export default UserProfile;
 

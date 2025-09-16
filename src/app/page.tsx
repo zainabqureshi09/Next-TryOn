@@ -13,12 +13,14 @@ import AnimatedSection from "./components/AnimatedSection";
 import { motion } from "framer-motion";
 import { Carousel_003 } from "@/components/v1/skiper49";
 import Image from "next/image";
+import useTranslation from "@/hooks/use-translation";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
   const sectionsRef = useRef<HTMLDivElement[]>([]);
   const parallaxRef = useRef<HTMLDivElement | null>(null);
+  const { t } = useTranslation();
 
   const addSectionRef = (el: HTMLDivElement) => {
     if (el && !sectionsRef.current.includes(el)) {
@@ -100,7 +102,7 @@ export default function Home() {
                      bg-clip-text text-transparent tracking-tight 
                      font-serif drop-shadow-lg text-center"
         >
-          Explore Our <span className="italic">Latest Collection</span>
+          {t('home.exploreCollection')}
         </motion.h2>
 
         <div className="flex items-center justify-center min-h-[60vh] px-4">
@@ -134,7 +136,7 @@ export default function Home() {
                            bg-clip-text text-transparent tracking-tight 
                            font-serif drop-shadow-lg text-center"
               >
-                Our Signature <span className="italic">Collections</span>
+                {t('home.signatureCollections')}
               </motion.h2>
 
               {/* Responsive Grid */}
@@ -185,22 +187,22 @@ export default function Home() {
                          bg-clip-text text-transparent tracking-tight 
                          font-serif drop-shadow-lg text-center"
             >
-              Why Choose <span className="italic">Lens Vision?</span>
+              {t('home.whyChooseUs')}
             </motion.h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 container mx-auto px-6">
               {[
                 {
-                  title: "Premium Quality",
-                  desc: "Crafted with top materials for durability and elegance.",
+                  title: t('home.premiumQuality'),
+                  desc: t('home.premiumQualityDesc'),
                 },
                 {
-                  title: "Smart Technology",
-                  desc: "Blue-light filters and AI-powered try-ons.",
+                  title: t('home.smartTechnology'),
+                  desc: t('home.smartTechnologyDesc'),
                 },
                 {
-                  title: "Luxury Design",
-                  desc: "Frames that tell a story of modern fashion.",
+                  title: t('home.luxuryDesign'),
+                  desc: t('home.luxuryDesignDesc'),
                 },
               ].map((item, i) => (
                 <div
@@ -232,12 +234,10 @@ export default function Home() {
 
           <div className="relative z-10 container mx-auto px-6 max-w-4xl text-center">
             <h2 className="text-3xl sm:text-4xl lg:text-6xl font-extrabold mb-6 text-purple-200 drop-shadow-xl tracking-tight font-display">
-              Redefining Eyewear
+              {t('home.redefiningEyewear')}
             </h2>
             <p className="text-base sm:text-lg lg:text-xl text-purple-100 leading-relaxed font-sans font-light">
-              At LensVision, we don’t just make glasses. We craft experiences
-              that blend technology, fashion, and luxury into one. Every frame
-              tells a story of elegance.
+              {t('home.redefiningDesc')}
             </p>
           </div>
         </section>
@@ -249,15 +249,14 @@ export default function Home() {
             className="py-20 sm:py-28 text-center bg-gradient-to-r from-purple-200 via-purple-100 to-indigo-100 relative z-20"
           >
             <h2 className="text-3xl sm:text-4xl lg:text-6xl font-extrabold mb-6 text-purple-900 tracking-tight font-display">
-              Experience Virtual Try-On Now
+              {t('home.experienceTryOn')}
             </h2>
             <p className="text-base sm:text-lg lg:text-xl text-gray-700 mb-8 max-w-2xl mx-auto font-sans font-medium">
-              Step into the future of eyewear with our cinematic, AI-powered
-              try-on experience.
+              {t('home.experienceDesc')}
             </p>
             <Link href="/tryon">
               <Button className="px-8 sm:px-10 py-4 sm:py-6 text-base sm:text-lg rounded-full bg-gradient-to-r from-purple-700 to-indigo-600 hover:scale-110 transition-transform shadow-xl text-white font-semibold font-sans">
-                Start Virtual Try-On <ArrowRight className="ml-2 w-5 sm:w-6 h-5 sm:h-6" />
+                {t('home.startTryOn')} <ArrowRight className="ml-2 w-5 sm:w-6 h-5 sm:h-6" />
               </Button>
             </Link>
           </section>

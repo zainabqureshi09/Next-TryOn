@@ -1,25 +1,43 @@
 import mongoose from "mongoose";
 
-type ConnectionObject = {
-    isConnected?: number;
-};
+// Global cache to prevent multiple connections during hot reload or lambda calls
+let cached = (global as any).mongoose;
 
-const connection: ConnectionObject = {};
+if (!cached) {
+  cached = (global as any).mongoose = { conn: null, promise: null };
+}
 
-async function dbConnect(): Promise<void> {
-    if (connection.isConnected) {
-        console.log("Already connected to database");
-        return;
-    }
-    try {
-        const conn = await mongoose.connect(process.env.MONGODB_URL || "");
-        connection.isConnected = conn.connections[0]?.readyState;
-        console.log("Connected to database");
-    } catch (error) {
-        console.log("Database connection failed", error);
-        // In Next.js it is better not to exit the process; just throw
-        throw error;
-    }
+async function dbConnect() {
+  const MONGODB_URI = process.env.MONGODB_URL as string | undefined;
+  if (!MONGODB_URI) {
+    throw new Error("Please define the MONGODB_URL environment variable");
+  }
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+    };
+    
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log("✅ Connected to MongoDB");
+      return mongoose;
+    }).catch((error) => {
+      console.error("❌ MongoDB connection error:", error);
+      throw error;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
 }
 
 export default dbConnect;

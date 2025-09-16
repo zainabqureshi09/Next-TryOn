@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useUIStore } from "@/store/ui";
+import { useTranslation } from "@/hooks/use-translation"; // fixed import
 
 interface ColorwayOption {
   id: string;
@@ -21,23 +22,10 @@ const colorways: ColorwayOption[] = [
     accent: "#000000",
     type: "video",
   },
-  {
-    id: "modern-frame",
-    name: "Modern Frame",
-    hero: "https://picsum.photos/1920/1080?random=1",
-    accent: "#2e026d",
-    type: "image",
-  },
-  {
-    id: "elegant-rose",
-    name: "Elegant Rose",
-    hero: "https://picsum.photos/1920/1080?random=2",
-    accent: "#ec4899",
-    type: "image",
-  },
 ];
 
 export function HeroMarquee() {
+  const { t } = useTranslation(); // hook use
   const { activeColorway } = useUIStore();
   const currentColorway =
     colorways.find((c) => c.id === activeColorway) || colorways[0];
@@ -54,7 +42,7 @@ export function HeroMarquee() {
           transition={{ duration: 1.2, ease: "easeOut" }}
         >
           <video
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
             autoPlay
             muted
             loop
@@ -66,11 +54,9 @@ export function HeroMarquee() {
       ) : (
         <motion.div
           key={currentColorway.id}
-          className="absolute inset-0 z-0"
+          className="absolute inset-0 z-0 bg-center bg-cover"
           style={{
             backgroundImage: `url(${currentColorway.hero})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
           }}
           initial={{ scale: 1.05 }}
           animate={{ scale: 1 }}
@@ -91,33 +77,27 @@ export function HeroMarquee() {
         >
           {/* Heading */}
           <h1 className="font-serif text-5xl md:text-7xl font-bold mb-6 leading-tight tracking-tight">
-            Luxury <br /> Eyewear
+            {t("hero.title")}
             <span className="block text-3xl md:text-4xl font-light text-gray-200 mt-2">
-              Virtual Try-On
+              {t("hero.subtitle")}
             </span>
           </h1>
 
           {/* Paragraph */}
           <p className="text-lg md:text-xl mb-10 text-gray-300 leading-relaxed">
-            Discover timeless elegance with our AI-powered
-            <br />
-            virtual try-on experience.
+            {t("hero.description")}
           </p>
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4">
             <Link href="/product-cart">
-              <Button
-                className="w-full sm:w-auto bg-purple-950/70 backdrop-blur-md text-white font-semibold border border-white/20 rounded-full px-8 py-4 hover:bg-transparent hover:text-white transition-colors duration-300"
-              >
-                Shop Now
+              <Button className="w-full sm:w-auto bg-purple-950/70 backdrop-blur-md text-white font-semibold border border-white/20 rounded-full px-8 py-4 hover:bg-transparent hover:text-white transition-colors duration-300">
+                {t("hero.shopNow")}
               </Button>
             </Link>
             <Link href="/contact">
-              <Button
-                className="w-full sm:w-auto bg-white/10 text-white font-light border border-white/30 rounded-full px-8 py-4 hover:bg-pink-600/80 hover:text-white transition-colors duration-300"
-              >
-                Contact Us
+              <Button className="w-full sm:w-auto bg-white/10 text-white font-light border border-white/30 rounded-full px-8 py-4 hover:bg-pink-600/80 hover:text-white transition-colors duration-300">
+                {t("hero.contactUs")}
               </Button>
             </Link>
           </div>

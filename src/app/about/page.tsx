@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Head from "next/head";
+// App Router automatically handles head metadata via `metadata` or Head component from next/headers is not used here.
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "@/hooks/use-translation"; // fixed import
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function AboutPage() {
   const heroRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (heroRef.current) {
@@ -74,58 +76,6 @@ export default function AboutPage() {
 
   return (
     <>
-      {/* SEO Optimized Head */}
-      <Head>
-        <title>About LensVision | Luxury Eyewear & Virtual Try-On</title>
-        <meta
-          name="description"
-          content="Discover LensVision – where premium craftsmanship meets timeless luxury. Experience designer eyewear with cutting-edge AI-powered virtual try-on technology."
-        />
-        <meta
-          name="keywords"
-          content="luxury eyewear, premium glasses, designer frames, virtual try-on, LensVision"
-        />
-        <meta name="author" content="LensVision" />
-
-        {/* Open Graph */}
-        <meta property="og:title" content="About LensVision | Luxury Eyewear & Virtual Try-On" />
-        <meta
-          property="og:description"
-          content="Luxury eyewear redefining self-expression with style, comfort, and AI try-on technology."
-        />
-        <meta property="og:image" content="/og/eyewear-preview.jpg" />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://lensvision.com/about" />
-
-        {/* Twitter Cards */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="About LensVision" />
-        <meta
-          name="twitter:description"
-          content="Luxury eyewear brand blending craftsmanship, design, and AI-powered virtual try-on."
-        />
-        <meta name="twitter:image" content="/og/eyewear-preview.jpg" />
-
-        {/* JSON-LD Structured Data */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              name: "LensVision",
-              url: "https://lensvision.com",
-              logo: "https://lensvision.com/logo.png",
-              sameAs: [
-                "https://twitter.com/lensvision",
-                "https://instagram.com/lensvision",
-                "https://linkedin.com/company/lensvision",
-              ],
-            }),
-          }}
-        />
-      </Head>
-
       <div className="overflow-hidden font-sans">
         {/* Hero Section */}
         <section
@@ -133,12 +83,10 @@ export default function AboutPage() {
           className="relative text-center py-32 bg-gradient-to-b from-purple-950 via-[#1a001f] to-background text-white space-y-6 overflow-hidden"
         >
           <h1 className="hero-title text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent animate-gradient drop-shadow-lg">
-            About Us
+            {t('about.title')}
           </h1>
           <p className="hero-text text-lg md:text-xl max-w-2xl mx-auto text-white/80 leading-relaxed">
-            Redefining eyewear with <strong>premium craftsmanship</strong>,{" "}
-            <strong>timeless design</strong>, and{" "}
-            <strong>cutting-edge virtual try-on technology</strong>.
+            {t('about.subtitle')}
           </p>
 
           {/* Floating Glow Circles */}
@@ -150,12 +98,12 @@ export default function AboutPage() {
         <section className="container mx-auto px-6 py-20 grid md:grid-cols-2 gap-10 stagger-card">
           {[
             {
-              title: "Our Mission",
-              desc: "Empowering individuality with eyewear that blends luxury design, comfort, and innovation.",
+              title: t('about.mission'),
+              desc: t('about.missionDesc'),
             },
             {
-              title: "Our Vision",
-              desc: "Building a sustainable and tech-forward future for fashion eyewear experiences.",
+              title: t('about.vision'),
+              desc: t('about.visionDesc'),
             },
           ].map((item, idx) => (
             <Card
@@ -176,16 +124,16 @@ export default function AboutPage() {
         <section className="container mx-auto px-6 py-20 grid md:grid-cols-3 gap-10 stagger-card">
           {[
             {
-              title: "Premium Craftsmanship",
-              desc: "Every frame is carefully designed and handcrafted with the finest materials.",
+              title: t('about.craftsmanship'),
+              desc: t('about.craftsmanshipDesc'),
             },
             {
-              title: "Next-Gen Technology",
-              desc: "AI virtual try-on delivers instant, realistic previews for every style.",
+              title: t('about.technology'),
+              desc: t('about.technologyDesc'),
             },
             {
-              title: "Sustainable Future",
-              desc: "Eco-friendly materials and recyclable packaging for a greener tomorrow.",
+              title: t('about.sustainability'),
+              desc: t('about.sustainabilityDesc'),
             },
           ].map((item, i) => (
             <Card
@@ -205,7 +153,7 @@ export default function AboutPage() {
         {/* Team Section */}
         <section className="py-24 bg-gradient-to-b from-background to-surface">
           <h2 className="text-center text-4xl font-bold mb-12">
-            Meet the Team
+            {t('about.team')}
           </h2>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-12 max-w-6xl mx-auto">
             {[
@@ -241,16 +189,15 @@ export default function AboutPage() {
         {/* Contact CTA */}
         <section className="py-24 bg-gradient-to-b from-surface to-background">
           <div className="text-center space-y-6 max-w-2xl mx-auto">
-            <h2 className="text-4xl font-bold">Get in Touch</h2>
+            <h2 className="text-4xl font-bold">{t('about.contact')}</h2>
             <p className="text-lg text-muted-foreground">
-              Have questions, feedback, or collaboration ideas? We’d love to
-              hear from you.
+              {t('about.contactDesc')}
             </p>
             <a
               href="/contact"
               className="contact-btn inline-block px-10 py-4 text-lg rounded-full font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:scale-110 transition-transform shadow-xl"
             >
-              Contact Us
+              {t('about.contactBtn')}
             </a>
           </div>
         </section>

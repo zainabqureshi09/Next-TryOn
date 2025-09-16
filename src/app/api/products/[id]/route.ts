@@ -3,6 +3,8 @@ import dbConnect from "@/lib/dbConnect";
 import Product from "@/lib/models/Product";
 import { productSchema } from "@/lib/validation";
 import { keyFromRequest, rateLimit } from "@/lib/rateLimit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 interface Params {
   params: { id: string };
@@ -16,6 +18,11 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
+  const session: any = await getServerSession(authOptions as any);
+  const s: any = session;
+  if (!s || s.user?.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const allowed = await rateLimit(keyFromRequest(req, "products:put"), { intervalMs: 60_000, max: 40 });
   if (!allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
@@ -31,6 +38,11 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(req: Request, { params }: Params) {
+  const session: any = await getServerSession(authOptions as any);
+  const s: any = session;
+  if (!s || s.user?.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const allowed = await rateLimit(keyFromRequest(req, "products:delete"), { intervalMs: 60_000, max: 20 });
   if (!allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
