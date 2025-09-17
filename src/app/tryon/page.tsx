@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import useTranslation from "@/hooks/use-translation";
-import VirtualTryOn from "../components/VirtualTryOn";
+import VirtualTryOn from "../../components/VirtualTryOn";
 
 export default function TryonPage() {
   const { t } = useTranslation();
