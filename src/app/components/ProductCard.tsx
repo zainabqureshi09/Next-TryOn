@@ -18,14 +18,23 @@ const ProductCard: React.FC<ProductCardProps> = ({ id, name, price, image, stock
   const { t } = useTranslation();
   const isOut = (stock ?? 0) <= 0;
   const isLow = !isOut && (stock as number) <= 3;
+
   return (
-    <Link href={`/product/${id}`} className="group" ref={ref as any}>
-      <div className="border rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 relative">
+    <Link href={`/product/${id}`} className="group">
+      {/* ✅ yaha ref lagaya, ab sahi chalega */}
+      <div
+        ref={ref as any}
+        className="border rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 relative"
+      >
         {isOut && (
-          <span className="absolute top-3 left-3 z-10 rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white">{t('product.outOfStock')}</span>
+          <span className="absolute top-3 left-3 z-10 rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white">
+            {t("product.outOfStock")}
+          </span>
         )}
         {isLow && (
-          <span className="absolute top-3 left-3 z-10 rounded bg-amber-500 px-2 py-1 text-xs font-semibold text-white">{t('product.lowStock')}</span>
+          <span className="absolute top-3 left-3 z-10 rounded bg-amber-500 px-2 py-1 text-xs font-semibold text-white">
+            {t("product.lowStock")}
+          </span>
         )}
         <Image
           src={image}
