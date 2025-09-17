@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 
 export interface VirtualTryOnProps {
   productImage: string;
@@ -31,6 +32,7 @@ export default function VirtualTryOn({
       return;
     }
     const img = new Image();
+    img.crossOrigin = "anonymous"; // prevent CORS issue
     img.src = userImageSrc;
     img.onload = () => setBgImg(img);
   }, [userImageSrc]);
@@ -80,9 +82,9 @@ export default function VirtualTryOn({
         ctx.drawImage(bgImg, 0, 0, canvasRef.current!.width, canvasRef.current!.height);
       }
 
-      // Overlay (glasses)
+      // Overlay (glasses/product)
       if (
-        overlayRef.current instanceof HTMLImageElement &&
+        overlayRef.current &&
         overlayRef.current.complete &&
         overlayRef.current.naturalWidth > 0
       ) {
@@ -104,11 +106,12 @@ export default function VirtualTryOn({
   }, [useCamera, bgImg, scaleFactor, verticalOffset]);
 
   return (
-    <div className="relative w-full flex justify-center">
+    <div className="relative w-full flex flex-col items-center gap-2">
       {useCamera && (
         <video ref={videoRef} autoPlay muted playsInline className="hidden" />
       )}
 
+      {/* Final Canvas */}
       <canvas
         ref={canvasRef}
         width={640}
@@ -116,8 +119,26 @@ export default function VirtualTryOn({
         className="border rounded-xl"
       />
 
-      {/* Hidden overlay image for canvas */}
-      <img ref={overlayRef} src={productImage} alt="overlay glasses" className="hidden" />
+      {/* UI me product image dikhane ke liye Next.js Image */}
+      <div className="mt-2">
+        <Image
+          src={productImage}
+          alt="Product preview"
+          width={200}
+          height={200}
+          className="rounded-lg shadow"
+          unoptimized // agar external domain se image aa rahi hai
+        />
+      </div>
+
+      {/* Canvas ke liye hidden <img /> (native) */}
+      <img
+        ref={overlayRef}
+        src={productImage}
+        alt="overlay"
+        className="hidden"
+        crossOrigin="anonymous"
+      />
     </div>
   );
 }
