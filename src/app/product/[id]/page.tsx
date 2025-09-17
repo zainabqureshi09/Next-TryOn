@@ -4,9 +4,9 @@ import { Product as ProductType } from "@/types";
 import AddToCartButton from "@/app/components/AddToCartButton";
 import Link from "next/link";
 import Image from "next/image";
-import VirtualTryOn from "@/app/components/VirtualTryOn";
 import useTranslation from "@/hooks/use-translation";
 import { useEffect, useState } from "react";
+import VirtualTryOn from "@/components/VirtualTryOn";
 
 async function getProduct(id: string) {
   try {
