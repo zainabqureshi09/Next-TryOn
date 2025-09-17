@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo } from "react";
+import { useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { products } from "@/data/products";
 import { categories } from "@/data/catalog";
 import { useCart } from "@/contexts/CartContext";
 
-export default function ShopPage() {
+function ShopContent() {
   const params = useSearchParams();
   const router = useRouter();
   const { addToCart } = useCart();
@@ -90,5 +90,13 @@ export default function ShopPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-6 py-10">Loading...</div>}>
+      <ShopContent />
+    </Suspense>
   );
 }

@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { products } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
+import { Suspense } from "react";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const params = useSearchParams();
   const productId = params.get("productId");
   const product = products.find((p) => p.id === productId);
@@ -71,5 +72,13 @@ export default function CheckoutPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="max-w-3xl mx-auto px-6 py-10">Loading...</div>}>
+      <CheckoutContent />
+    </Suspense>
   );
 }

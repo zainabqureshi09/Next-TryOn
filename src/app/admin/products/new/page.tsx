@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import Image from "next/image"; // ✅ Next.js image component
 
 export default function NewProductPage() {
 	const router = useRouter();
@@ -31,7 +32,6 @@ export default function NewProductPage() {
 
 		try {
 			setUploading(true);
-			// Prefer dataUrl for unsigned uploads
 			const dataUrl = await toDataUrl();
 			const res = await fetch("/api/upload", {
 				method: "POST",
@@ -46,7 +46,6 @@ export default function NewProductPage() {
 					return;
 				}
 			}
-			// Fallback to multipart if needed
 			const fd = new FormData();
 			fd.append("file", file);
 			const res2 = await fetch("/api/upload", { method: "POST", body: fd });
@@ -113,6 +112,7 @@ export default function NewProductPage() {
 				{error && (
 					<p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>
 				)}
+
 				{/* Product Name */}
 				<div>
 					<label className="block text-sm font-medium mb-1">Name</label>
@@ -164,15 +164,19 @@ export default function NewProductPage() {
 						</label>
 					</div>
 					{form.image && (
-						<img src={form.image} alt="preview" className="mt-2 h-24 w-24 object-cover rounded" />
+						<Image
+							src={form.image}
+							alt="preview"
+							width={96}
+							height={96}
+							className="mt-2 h-24 w-24 object-cover rounded"
+						/>
 					)}
 				</div>
 
 				{/* Overlay Image */}
 				<div>
-					<label className="block text-sm font-medium mb-1">
-						Overlay Image URL (PNG)
-					</label>
+					<label className="block text-sm font-medium mb-1">Overlay Image URL (PNG)</label>
 					<div className="flex gap-2 items-start">
 						<input
 							className="w-full border rounded-lg px-3 py-2"
@@ -199,13 +203,19 @@ export default function NewProductPage() {
 						</label>
 					</div>
 					{form.overlayImage && (
-						<img src={form.overlayImage} alt="overlay preview" className="mt-2 h-24 w-24 object-contain bg-white rounded" />
+						<Image
+							src={form.overlayImage}
+							alt="overlay preview"
+							width={96}
+							height={96}
+							className="mt-2 h-24 w-24 object-contain bg-white rounded"
+						/>
 					)}
 				</div>
 
 				{/* Stock */}
 				<div>
-					<label className="block text Sm font-medium mb-1">Stock</label>
+					<label className="block text-sm font-medium mb-1">Stock</label>
 					<input
 						type="number"
 						className="w-full border rounded-lg px-3 py-2"

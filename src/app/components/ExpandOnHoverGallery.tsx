@@ -23,7 +23,7 @@ export default function ExpandOnHoverGallery({ items }: { items: GalleryItem[] }
         const basis = isActive ? "basis-2/3" : active === null ? "basis-1/3" : "basis-1/6";
         const content = (
           <div
-            className={`${basis} relative h-80 overflow-hidden rounded-2xl border border-purple-200 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]`}
+            className={`${basis} relative h-80 overflow-hidden rounded-2xl border border-purple-200 transition-all duration-500 ease-in-out`}
             onMouseEnter={() => setActive(idx)}
           >
             <Image
@@ -55,6 +55,9 @@ export default function ExpandOnHoverGallery({ items }: { items: GalleryItem[] }
     </div>
   );
 }
+
+
+
 
 
 

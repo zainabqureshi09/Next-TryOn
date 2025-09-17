@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image"; // ✅ Next.js Image import
 
 export default function EditProductPage() {
 	const params = useParams<{ id: string }>();
@@ -133,7 +134,13 @@ export default function EditProductPage() {
 						</label>
 					</div>
 					{form.image && (
-						<img src={form.image} alt="preview" className="mt-2 h-24 w-24 object-cover rounded" />
+						<Image
+							src={form.image}
+							alt="preview"
+							width={96} // ✅ must set
+							height={96}
+							className="mt-2 h-24 w-24 object-cover rounded"
+						/>
 					)}
 				</div>
 				<div>
@@ -149,7 +156,13 @@ export default function EditProductPage() {
 						</label>
 					</div>
 					{form.overlayImage && (
-						<img src={form.overlayImage} alt="overlay preview" className="mt-2 h-24 w-24 object-contain bg-white rounded" />
+						<Image
+							src={form.overlayImage}
+							alt="overlay preview"
+							width={96}
+							height={96}
+							className="mt-2 h-24 w-24 object-contain bg-white rounded"
+						/>
 					)}
 				</div>
 				<div>

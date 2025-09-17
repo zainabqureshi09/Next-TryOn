@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface VirtualTryOnProps {
   productImage: string;
@@ -21,6 +22,19 @@ export default function VirtualTryOn({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayRef = useRef<HTMLImageElement | null>(null);
   const animRef = useRef<number>();
+
+  const [bgImg, setBgImg] = useState<HTMLImageElement | null>(null);
+
+  // Load uploaded user image
+  useEffect(() => {
+    if (!userImageSrc) {
+      setBgImg(null);
+      return;
+    }
+    const img = new Image();
+    img.src = userImageSrc;
+    img.onload = () => setBgImg(img);
+  }, [userImageSrc]);
 
   // Start camera
   useEffect(() => {
@@ -46,39 +60,26 @@ export default function VirtualTryOn({
     };
   }, [useCamera]);
 
-  // Rendering
+  // Rendering loop
   useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx || !canvasRef.current) return;
 
     const render = () => {
-      if (!ctx || !canvasRef.current) return;
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      ctx.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
 
-      // Draw background (camera or uploaded image)
       if (useCamera && videoRef.current) {
         ctx.drawImage(
           videoRef.current,
           0,
           0,
-          canvasRef.current.width,
-          canvasRef.current.height
+          canvasRef.current!.width,
+          canvasRef.current!.height
         );
-      } else if (userImageSrc) {
-        const bgImg = new Image();
-        bgImg.src = userImageSrc;
-        bgImg.onload = () => {
-          ctx.drawImage(
-            bgImg,
-            0,
-            0,
-            canvasRef.current!.width,
-            canvasRef.current!.height
-          );
-        };
+      } else if (bgImg) {
+        ctx.drawImage(bgImg, 0, 0, canvasRef.current!.width, canvasRef.current!.height);
       }
 
-      // Draw overlay (glasses/frame) only if loaded correctly
       if (
         overlayRef.current instanceof HTMLImageElement &&
         overlayRef.current.complete &&
@@ -86,8 +87,8 @@ export default function VirtualTryOn({
       ) {
         const w = overlayRef.current.naturalWidth * scaleFactor;
         const h = overlayRef.current.naturalHeight * scaleFactor;
-        const x = (canvasRef.current.width - w) / 2;
-        const y = (canvasRef.current.height - h) / 2 + verticalOffset;
+        const x = (canvasRef.current!.width - w) / 2;
+        const y = (canvasRef.current!.height - h) / 2 + verticalOffset;
         ctx.drawImage(overlayRef.current, x, y, w, h);
       }
 
@@ -99,7 +100,7 @@ export default function VirtualTryOn({
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [useCamera, userImageSrc, scaleFactor, verticalOffset]);
+  }, [useCamera, bgImg, scaleFactor, verticalOffset]);
 
   return (
     <div className="relative w-full flex justify-center">
@@ -114,7 +115,7 @@ export default function VirtualTryOn({
         className="border rounded-xl"
       />
 
-      {/* Hidden overlay frame (glasses) */}
+      {/* Hidden overlay image */}
       <img ref={overlayRef} src={productImage} alt="overlay" className="hidden" />
     </div>
   );
