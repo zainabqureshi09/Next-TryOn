@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -68,6 +67,7 @@ export default function VirtualTryOn({
     const render = () => {
       ctx.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
 
+      // Background (camera / uploaded image)
       if (useCamera && videoRef.current) {
         ctx.drawImage(
           videoRef.current,
@@ -80,6 +80,7 @@ export default function VirtualTryOn({
         ctx.drawImage(bgImg, 0, 0, canvasRef.current!.width, canvasRef.current!.height);
       }
 
+      // Overlay (glasses)
       if (
         overlayRef.current instanceof HTMLImageElement &&
         overlayRef.current.complete &&
@@ -115,8 +116,8 @@ export default function VirtualTryOn({
         className="border rounded-xl"
       />
 
-      {/* Hidden overlay image */}
-      <img ref={overlayRef} src={productImage} alt="overlay" className="hidden" />
+      {/* Hidden overlay image for canvas */}
+      <img ref={overlayRef} src={productImage} alt="overlay glasses" className="hidden" />
     </div>
   );
 }
