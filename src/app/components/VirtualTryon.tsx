@@ -7,16 +7,16 @@ export interface VirtualTryOnProps {
   productImage: string;
   useCamera: boolean;
   userImageSrc: string | null;
-  scaleFactor: number;
-  verticalOffset: number;
+  scaleFactor?: number;
+  verticalOffset?: number;
 }
 
 export default function VirtualTryOn({
   productImage,
   useCamera,
   userImageSrc,
-  scaleFactor,
-  verticalOffset,
+  scaleFactor = 1,
+  verticalOffset = 0,
 }: VirtualTryOnProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -31,11 +31,11 @@ export default function VirtualTryOn({
       return;
     }
 
-    const img = new Image(); // now safe, because we renamed next/image import
+    const img = new window.Image();
     img.crossOrigin = "anonymous";
     img.onload = () => setBgImg(img);
-    img.onerror = (err) => {
-      console.error("Failed to load user image", err);
+    img.onerror = () => {
+      console.error("Failed to load user image");
       setBgImg(null);
     };
     img.src = userImageSrc;
@@ -46,18 +46,44 @@ export default function VirtualTryOn({
     };
   }, [userImageSrc]);
 
+  // Load product overlay image
+  useEffect(() => {
+    if (!productImage) return;
+
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      overlayRef.current = img;
+    };
+    img.onerror = () => {
+      console.error("Failed to load product overlay");
+    };
+    img.src = productImage;
+
+    return () => {
+      overlayRef.current = null;
+    };
+  }, [productImage]);
+
   // Start / stop camera
   useEffect(() => {
     let stream: MediaStream | null = null;
 
     async function startCamera() {
-      if (useCamera && videoRef.current) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          videoRef.current.srcObject = stream;
-        } catch (err) {
-          console.error("Camera error:", err);
+      if (!useCamera || !videoRef.current) return;
+
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("Camera access not supported in this browser");
         }
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+        });
+
+        videoRef.current.srcObject = stream;
+      } catch (err) {
+        console.error("Camera error:", err);
       }
     }
 
@@ -80,14 +106,14 @@ export default function VirtualTryOn({
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Background (camera / uploaded image)
-      if (useCamera && videoRef.current) {
+      // Background: camera or uploaded image
+      if (useCamera && videoRef.current && videoRef.current.readyState >= 2) {
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
       } else if (bgImg) {
         ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
       }
 
-      // Overlay (glasses/product)
+      // Overlay (product/glasses)
       if (overlayRef.current) {
         const w = overlayRef.current.naturalWidth * scaleFactor;
         const h = overlayRef.current.naturalHeight * scaleFactor;
@@ -121,7 +147,7 @@ export default function VirtualTryOn({
         className="border rounded-xl"
       />
 
-      {/* Product Preview */}
+      {/* Product Preview (for user to see the product separately) */}
       <div className="mt-2">
         <NextImage
           src={productImage}
@@ -130,21 +156,6 @@ export default function VirtualTryOn({
           height={200}
           className="rounded-lg shadow"
           unoptimized
-        />
-      </div>
-
-      {/* Hidden overlay (using Next.js Image) */}
-      <div className="hidden">
-        <NextImage
-          src={productImage}
-          alt="overlay"
-          width={200}
-          height={200}
-          crossOrigin="anonymous"
-          unoptimized
-          onLoadingComplete={(img) => {
-            overlayRef.current = img; // get real <img> element
-          }}
         />
       </div>
     </div>
