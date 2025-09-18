@@ -1,119 +1,105 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import useTranslation from "@/hooks/use-translation";
-import VirtualTryOn from "../../components/VirtualTryOn";
+import VirtualTryOn from "@/components/VirtualTryOn";
+import ImageUploader from "@/components/ImageUploader";
+import ProductSelector, { Product } from "@/components/ProductSelector";
 
-export default function TryonPage() {
-  const { t } = useTranslation();
+const products: Product[] = [
+  { id: "glasses1", name: "Classic Frames", image: "/frames/glasses.png", type: "glasses" },
+  { id: "glasses2", name: "Modern Frames", image: "/frames/glasses2.png", type: "glasses" },
+  { id: "glasses3", name: "Sunglasses", image: "/frames/glasses.png", type: "glasses" },
+];
+
+export default function TryOnPage() {
   const [useCamera, setUseCamera] = useState(true);
-  const [userImageSrc, setUserImageSrc] = useState<string | null>(null);
-  const [scaleFactor, setScaleFactor] = useState(2.0);
-  const [verticalOffset, setVerticalOffset] = useState(-40);
+  const [userImage, setUserImage] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product>(products[0]);
+  const [scaleFactor, setScaleFactor] = useState(1);
+  const [verticalOffset, setVerticalOffset] = useState(0);
 
-  // Example frame overlays (ensure files exist in public/assets/products/)
-  const frames = [
-    { id: "aviator", name: "Aviator", overlay: "/assets/products/sunglasses1.png" },
-    { id: "bluelight", name: "Blue Light", overlay: "/assets/products/bluelight1.png" },
-    { id: "round", name: "Round", overlay: "/assets/products/round1.png" },
-    { id: "classic", name: "Classic", overlay: "/assets/products/classic1.png" },
-  ];
+  const handleSelectProduct = (p: Product) => setSelectedProduct(p);
 
-  const [selected, setSelected] = useState(frames[0]);
+  const handleImageUpload = (imageDataUrl: string) => {
+    setUserImage(imageDataUrl);
+    setUseCamera(false);
+  };
 
   return (
-    <section className="max-w-5xl mx-auto px-6 py-12">
-      <h1 className="text-3xl font-bold text-purple-800 mb-2">{t('tryon.title')}</h1>
-      <p className="text-gray-600 mb-6">
-        {t('tryon.subtitle')}
-      </p>
+    <main className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6 text-center">Virtual Try-On</h1>
 
-      {/* Frame Selector */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        {frames.map((f) => (
-          <button
-            key={f.id}
-            onClick={() => setSelected(f)}
-            className={`border rounded-xl p-3 text-sm transition-colors duration-300 ${
-              selected.id === f.id
-                ? "border-purple-700 shadow-lg"
-                : "border-gray-200 hover:border-purple-400"
-            }`}
-          >
-            {/* ✅ Use Next.js public images */}
-            <Image
-              src={f.overlay}
-              alt={f.name}
-              width={100}
-              height={96}
-              className="w-full h-24 object-contain mb-2"
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1">
+          <ProductSelector
+            products={products}
+            onSelectProduct={handleSelectProduct}
+            selectedProductId={selectedProduct.id}
+          />
+
+          <div className="mt-6">
+            <h3 className="text-lg font-medium mb-3">Adjust Fit</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Size</label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="1.5"
+                  step="0.05"
+                  value={scaleFactor}
+                  onChange={(e) => setScaleFactor(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Position</label>
+                <input
+                  type="range"
+                  min="-50"
+                  max="50"
+                  step="1"
+                  value={verticalOffset}
+                  onChange={(e) => setVerticalOffset(parseInt(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="md:col-span-2">
+          <div className="bg-white rounded-xl shadow-md p-4">
+            <VirtualTryOn
+              productImage={selectedProduct.image}
+              useCamera={useCamera}
+              userImageSrc={userImage}
+              scaleFactor={scaleFactor}
+              verticalOffset={verticalOffset}
+              productType={selectedProduct.type as "glasses" | "hat" | "earrings"}
             />
-            {f.name}
-          </button>
-        ))}
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => { setUseCamera(true); setUserImage(null); }}
+                className={`px-4 py-2 rounded-md ${useCamera ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"}`}
+              >
+                Use Camera
+              </button>
+
+              <button
+                onClick={() => setUseCamera(false)}
+                className={`px-4 py-2 rounded-md ${!useCamera ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"}`}
+              >
+                Use Uploaded Image
+              </button>
+
+              {!useCamera && <ImageUploader onImageUpload={handleImageUpload} />}
+            </div>
+          </div>
+        </div>
       </div>
-
-      {/* Controls */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <button
-          onClick={() => {
-            setUseCamera(true);
-            setUserImageSrc(null);
-          }}
-          className={`px-4 py-2 rounded-lg border transition-colors duration-200 ${
-            useCamera
-              ? "bg-purple-700 text-white"
-              : "border-purple-700 text-purple-700 hover:bg-purple-50"
-          }`}
-        >
-          {t('tryon.useWebcam')}
-        </button>
-        <button
-          onClick={() => {
-            setUseCamera(false);
-            // 👇 check karo file public/uploads/sample-user.jpg me exist karti hai
-            setUserImageSrc("/uploads/sample-user.jpg");
-          }}
-          className={`px-4 py-2 rounded-lg border transition-colors duration-200 ${
-            !useCamera
-              ? "bg-purple-700 text-white"
-              : "border-purple-700 text-purple-700 hover:bg-purple-50"
-          }`}
-        >
-          {t('tryon.uploadPhoto')}
-        </button>
-
-        {/* Sliders */}
-        <label className="ml-4 text-sm font-medium">{t('tryon.scale')}</label>
-        <input
-          type="range"
-          min={1.6}
-          max={3.2}
-          step={0.1}
-          value={scaleFactor}
-          onChange={(e) => setScaleFactor(parseFloat(e.target.value))}
-        />
-
-        <label className="ml-4 text-sm font-medium">{t('tryon.verticalOffset')}</label>
-        <input
-          type="range"
-          min={-80}
-          max={40}
-          step={2}
-          value={verticalOffset}
-          onChange={(e) => setVerticalOffset(parseFloat(e.target.value))}
-        />
-      </div>
-
-      {/* TryOn Preview */}
-      <VirtualTryOn
-        productImage={selected.overlay}
-        useCamera={useCamera}
-        userImageSrc={userImageSrc}
-        scaleFactor={scaleFactor}
-        verticalOffset={verticalOffset}
-      />
-    </section>
+    </main>
   );
 }
