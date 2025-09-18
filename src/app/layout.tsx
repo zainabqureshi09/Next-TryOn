@@ -5,6 +5,7 @@ import Footer from "./components/Footer";
 import Header from "./components/Navbar";
 import Providers from "./providers";
 import { CartProvider } from "@/contexts/CartContext";
+import FloatingButtons from "./components/WhatsApp";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -64,7 +65,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
             {/* ✅ Footer always at bottom */}
             <Footer />
+            <FloatingButtons />
           </CartProvider>
+          
         </Providers>
       </body>
     </html>

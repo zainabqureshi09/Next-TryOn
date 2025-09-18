@@ -90,7 +90,7 @@ export function HeroMarquee() {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/product-cart">
+            <Link href="/shop">
               <Button className="w-full sm:w-auto bg-purple-950/70 backdrop-blur-md text-white font-semibold border border-white/20 rounded-full px-8 py-4 hover:bg-transparent hover:text-white transition-colors duration-300">
                 {t("hero.shopNow")}
               </Button>
