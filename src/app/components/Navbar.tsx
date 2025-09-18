@@ -50,9 +50,9 @@ export default function Header() {
 
   const languages = [
     { code: "EN", name: "English" },
-    { code: "UR", name: "اردو" },
+    { code: "IT", name: "Italiano" },
     { code: "FR", name: "Français" },
-    { code: "AR", name: "العربية" },
+    { code: "De", name: "German" },
   ];
 
   // Close menu when route changes

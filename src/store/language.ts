@@ -1,16 +1,41 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type Language = "EN" | "UR" | "FR" | "AR";
+export type Language = "EN" | "IT" | "FR" | "DE";
+
+// Define the translation keys type
+export type TranslationKey = 
+  | "nav.home" | "nav.tryon" | "nav.about" | "nav.categories" | "nav.contact" | "nav.shop" | "nav.men" | "nav.women" | "nav.kids" | "nav.blueLight" | "nav.sunglasses"
+  | "hero.title" | "hero.subtitle" | "hero.description" | "hero.shopNow" | "hero.contactUs"
+  | "topbar.delivery" | "topbar.freeShipping"
+  | "auth.signIn" | "auth.signOut" | "auth.admin" | "auth.signInTitle" | "auth.continueAsGuest" | "auth.emailAddress" | "auth.password" | "auth.enterEmail" | "auth.enterPassword" | "auth.signingIn" | "auth.signInWithGoogle" | "auth.demoCredentials" | "auth.invalidCredentials" | "auth.errorOccurred" | "auth.googleSignInFailed"
+  | "cart.title" | "cart.empty" | "cart.goToShop" | "cart.subtotal" | "cart.checkout" | "cart.clear" | "cart.remove" | "cart.increase" | "cart.decrease"
+  | "product.addToCart" | "product.tryOn" | "product.outOfStock" | "product.lowStock"
+  | "account.title" | "account.welcome" | "account.profile" | "account.orders" | "account.gallery" | "account.profileDesc" | "account.ordersDesc" | "account.galleryDesc"
+  | "admin.dashboard" | "admin.welcome" | "admin.totalProducts" | "admin.totalOrders" | "admin.totalRevenue" | "admin.totalUsers" | "admin.addProduct" | "admin.manageProducts" | "admin.viewOrders" | "admin.addProductDesc" | "admin.manageProductsDesc" | "admin.viewOrdersDesc"
+  | "home.exploreCollection" | "home.signatureCollections" | "home.whyChooseUs" | "home.premiumQuality" | "home.premiumQualityDesc" | "home.smartTechnology" | "home.smartTechnologyDesc" | "home.luxuryDesign" | "home.luxuryDesignDesc" | "home.redefiningEyewear" | "home.redefiningDesc" | "home.experienceTryOn" | "home.experienceDesc" | "home.startTryOn"
+  | "footer.brandDesc" | "footer.quickLinks" | "footer.categories" | "footer.support" | "footer.copyright"
+  | "about.title" | "about.subtitle" | "about.mission" | "about.missionDesc" | "about.vision" | "about.visionDesc" | "about.craftsmanship" | "about.craftsmanshipDesc" | "about.technology" | "about.technologyDesc" | "about.sustainability" | "about.sustainabilityDesc" | "about.team" | "about.contact" | "about.contactDesc" | "about.contactBtn"
+  | "contact.title" | "contact.subtitle" | "contact.callUs" | "contact.emailUs" | "contact.visitUs" | "contact.sendMessage" | "contact.yourName" | "contact.yourEmail" | "contact.subject" | "contact.yourMessage" | "contact.sendBtn"
+  | "tryon.title" | "tryon.subtitle" | "tryon.useWebcam" | "tryon.uploadPhoto" | "tryon.scale" | "tryon.verticalOffset"
+  | "checkout.success" | "checkout.successDesc" | "checkout.emailSent" | "checkout.orderProcessed" | "checkout.orderId" | "checkout.viewOrders" | "checkout.continueShopping" | "checkout.cancelled" | "checkout.cancelledDesc" | "checkout.contactSupport" | "checkout.returnToCart"
+  | "common.loading" | "common.error" | "common.success" | "common.cancel" | "common.save" | "common.edit" | "common.delete" | "common.close" | "common.back" | "common.next" | "common.previous";
 
 export interface LanguageState {
   currentLanguage: Language;
   setLanguage: (language: Language) => void;
-  getTranslation: (key: string) => string;
+  getTranslation: (key: TranslationKey) => string;
+}
+
+// Define the translations type
+interface Translations {
+  [language: string]: {
+    [key in TranslationKey]?: string;
+  };
 }
 
 // Translation data
-const translations = {
+const translations: Translations = {
   EN: {
     // Navigation
     "nav.home": "Home",
@@ -203,195 +228,196 @@ const translations = {
     "common.previous": "Previous",
   },
 
-  UR: {
+  IT: {
     // Navigation
-    "nav.home": "ہوم",
-    "nav.tryon": "ٹرائی آن",
-    "nav.about": "ہمارے بارے میں",
-    "nav.categories": "کیٹگریز",
-    "nav.contact": "رابطہ",
-    "nav.shop": "شاپ",
-    "nav.men": "مرد",
-    "nav.women": "خواتین",
-    "nav.kids": "بچے",
-    "nav.blueLight": "بلیو لائٹ",
-    "nav.sunglasses": "دھوپ کے چشمے",
+    "nav.home": "Home",
+    "nav.tryon": "Prova Virtuale",
+    "nav.about": "Chi Siamo",
+    "nav.categories": "Categorie",
+    "nav.contact": "Contattaci",
+    "nav.shop": "Negozio",
+    "nav.men": "Uomini",
+    "nav.women": "Donne",
+    "nav.kids": "Bambini",
+    "nav.blueLight": "Luce Blu",
+    "nav.sunglasses": "Occhiali da Sole",
+
+    "hero.title": "Occhiali di Lusso",
+    "hero.subtitle": "Prova Virtuale",
+    "hero.description":
+      "Scopri l'eleganza senza tempo con la nostra esperienza di prova virtuale alimentata dall'IA.",
+    "hero.shopNow": "Acquista Ora",
+    "hero.contactUs": "Contattaci",
 
     // Top bar
-    "topbar.delivery": "2-5 دن میں ڈیلیوری",
-    "topbar.freeShipping": "$200 سے زیادہ پر مفت شپنگ",
+    "topbar.delivery": "Consegna in 2-5 giorni",
+    "topbar.freeShipping": "Spedizione gratuita oltre 200€",
 
     // Auth
-    "auth.signIn": "سائن ان",
-    "auth.signOut": "سائن آؤٹ",
-    "auth.admin": "ایڈمن",
+    "auth.signIn": "Accedi",
+    "auth.signOut": "Esci",
+    "auth.admin": "Amministratore",
 
     // Cart
-    "cart.title": "آپ کی ٹوکری",
-    "cart.empty": "آپ کی ٹوکری خالی ہے",
-    "cart.goToShop": "شاپ پر جائیں",
-    "cart.subtotal": "ذیلی کل",
-    "cart.checkout": "چیک آؤٹ کریں",
-    "cart.clear": "ٹوکری صاف کریں",
-    "cart.remove": "ہٹائیں",
-    "cart.increase": "مقدار بڑھائیں",
-    "cart.decrease": "مقدار کم کریں",
+    "cart.title": "Il Tuo Carrello",
+    "cart.empty": "Il tuo carrello è vuoto",
+    "cart.goToShop": "Vai al Negozio",
+    "cart.subtotal": "Subtotale",
+    "cart.checkout": "Procedi al Checkout",
+    "cart.clear": "Svuota carrello",
+    "cart.remove": "Rimuovi",
+    "cart.increase": "Aumenta quantità",
+    "cart.decrease": "Diminuisci quantità",
 
     // Product
-    "product.addToCart": "ٹوکری میں شامل کریں",
-    "product.tryOn": "ٹرائی آن",
-    "product.outOfStock": "اسٹاک ختم",
-    "product.lowStock": "کم اسٹاک",
+    "product.addToCart": "Aggiungi al Carrello",
+    "product.tryOn": "Prova",
+    "product.outOfStock": "Esaurito",
+    "product.lowStock": "Scorte limitate",
 
     // Account
-    "account.title": "میرا اکاؤنٹ",
-    "account.welcome": "واپس آئیں",
-    "account.profile": "پروفائل",
-    "account.orders": "آرڈرز",
-    "account.gallery": "گیلری",
-    "account.profileDesc": "اپنی ذاتی معلومات کا انتظام کریں",
-    "account.ordersDesc": "اپنے آرڈر کی تاریخ دیکھیں",
-    "account.galleryDesc": "آپ کی ورچوئل ٹرائی آن تصاویر",
-
-    "hero.title": "عمدہ عینکیں",
-    "hero.subtitle": "ورچوئل ٹرائی آن",
-    "hero.description": "ہماری AI ٹیکنالوجی کے ساتھ اپنی شخصیت کو نکھاریں۔",
-    "hero.shopNow": "ابھی خریدیں",
-    "hero.contactUs": "رابطہ کریں",
+    "account.title": "Il Mio Account",
+    "account.welcome": "Bentornato",
+    "account.profile": "Profilo",
+    "account.orders": "Ordini",
+    "account.gallery": "Galleria",
+    "account.profileDesc": "Gestisci le tue informazioni personali",
+    "account.ordersDesc": "Visualizza la cronologia ordini",
+    "account.galleryDesc": "Le tue foto di prova virtuale",
 
     // Admin
-    "admin.dashboard": "ایڈمن ڈیش بورڈ",
-    "admin.welcome": "LensVision ایڈمن پینل میں خوش آمدید",
-    "admin.totalProducts": "کل مصنوعات",
-    "admin.totalOrders": "کل آرڈرز",
-    "admin.totalRevenue": "کل آمدنی",
-    "admin.totalUsers": "کل صارفین",
-    "admin.addProduct": "نئی مصنوعات شامل کریں",
-    "admin.manageProducts": "مصنوعات کا انتظام",
-    "admin.viewOrders": "آرڈرز دیکھیں",
-    "admin.addProductDesc": "نئی مصنوعات کی لسٹنگ بنائیں",
-    "admin.manageProductsDesc": "موجودہ مصنوعات دیکھیں اور ترمیم کریں",
-    "admin.viewOrdersDesc": "کسٹمر آرڈرز کا انتظام کریں",
+    "admin.dashboard": "Pannello di Amministrazione",
+    "admin.welcome": "Benvenuto nel pannello di amministrazione LensVision",
+    "admin.totalProducts": "Prodotti Totali",
+    "admin.totalOrders": "Ordini Totali",
+    "admin.totalRevenue": "Fatturato Totale",
+    "admin.totalUsers": "Utenti Totali",
+    "admin.addProduct": "Aggiungi Nuovo Prodotto",
+    "admin.manageProducts": "Gestisci Prodotti",
+    "admin.viewOrders": "Visualizza Ordini",
+    "admin.addProductDesc": "Crea una nuova scheda prodotto",
+    "admin.manageProductsDesc": "Visualizza e modifica prodotti esistenti",
+    "admin.viewOrdersDesc": "Gestisci ordini clienti",
 
     // Home Page
-    "home.exploreCollection": "ہماری تازہ ترین کالیکشن دیکھیں",
-    "home.signatureCollections": "ہماری خصوصی کالیکشنز",
-    "home.whyChooseUs": "Lens Vision کیوں منتخب کریں؟",
-    "home.premiumQuality": "پریمیم کوالٹی",
+    "home.exploreCollection": "Esplora la Nostra Ultima Collezione",
+    "home.signatureCollections": "Le Nostre Collezioni Signature",
+    "home.whyChooseUs": "Perché Scegliere Lens Vision?",
+    "home.premiumQuality": "Qualità Premium",
     "home.premiumQualityDesc":
-      "پائیداری اور خوبصورتی کے لیے اعلیٰ معیار کے مواد سے تیار۔",
-    "home.smartTechnology": "اسمارٹ ٹیکنالوجی",
-    "home.smartTechnologyDesc": "بلیو لائٹ فلٹرز اور AI سے چلنے والے ٹرائی آن۔",
-    "home.luxuryDesign": "لگژری ڈیزائن",
-    "home.luxuryDesignDesc": "فریمز جو جدید فیشن کی کہانی سناتی ہیں۔",
-    "home.redefiningEyewear": "آنکھوں کے شیشے کو نئی شکل",
+      "Realizzati con materiales di prima qualità per durabilità ed eleganza.",
+    "home.smartTechnology": "Tecnologia Intelligente",
+    "home.smartTechnologyDesc": "Filtri luce blu e prova virtuale con IA.",
+    "home.luxuryDesign": "Design di Lusso",
+    "home.luxuryDesignDesc": "Montature che raccontano una storia di moda moderna.",
+    "home.redefiningEyewear": "Ridefinire gli Occhiali",
     "home.redefiningDesc":
-      "LensVision میں، ہم صرف شیشے نہیں بناتے۔ ہم ایسے تجربات تخلیق کرتے ہیں جو ٹیکنالوجی، فیشن اور لگژری کو یکجا کرتے ہیں۔ ہر فریم خوبصورتی کی کہانی سناتا ہے۔",
-    "home.experienceTryOn": "اب ورچوئل ٹرائی آن کا تجربہ کریں",
+      "In LensVision, non produciamo solo occhiali. Creiamo esperienze che uniscono tecnologia, moda e lusso in un unico prodotto. Ogni montatura racconta una storia di eleganza.",
+    "home.experienceTryOn": "Prova la Prova Virtuale Ora",
     "home.experienceDesc":
-      "ہمارے سنیماٹک، AI سے چلنے والے ٹرائی آن تجربے کے ساتھ آنکھوں کے شیشوں کے مستقبل میں قدم رکھیں۔",
-    "home.startTryOn": "ورچوئل ٹرائی آن شروع کریں",
+      "Entra nel futuro degli occhiali con la nostra esperienza cinematografica di prova virtuale alimentata dall'IA.",
+    "home.startTryOn": "Inizia la Prova Virtuale",
 
     // Footer
     "footer.brandDesc":
-      "ہماری AI سے چلنے والی ورچوئل ٹرائی آن ٹیکنالوجی کے ساتھ آنکھوں کے شیشوں کی خریداری کا مستقبل دیکھیں۔",
-    "footer.quickLinks": "فوری لنکس",
-    "footer.categories": "کیٹگریز",
-    "footer.support": "سپورٹ",
-    "footer.copyright": "© 2025 LensVision. تمام حقوق محفوظ ہیں۔",
-
-    // Common
-    "common.loading": "لوڈ ہو رہا ہے...",
-    "common.error": "خرابی",
-    "common.success": "کامیابی",
-    "common.cancel": "منسوخ",
-    "common.save": "محفوظ",
-    "common.edit": "ترمیم",
-    "common.delete": "حذف",
-    "common.close": "بند",
-    "common.back": "واپس",
-    "common.next": "اگلا",
-    "common.previous": "پچھلا",
+      "Sperimenta il futuro dello shopping di occhiali con la nostra tecnologia di prova virtuale alimentata dall'IA.",
+    "footer.quickLinks": "Link Rapidi",
+    "footer.categories": "Categorie",
+    "footer.support": "Supporto",
+    "footer.copyright": "© 2025 LensVision. Tutti i diritti riservati.",
 
     // About Page
-    "about.title": "ہمارے بارے میں",
+    "about.title": "Chi Siamo",
     "about.subtitle":
-      "پریمیم کاریگری، لازوال ڈیزائن، اور جدید ورچوئل ٹرائی آن ٹیکنالوجی کے ساتھ آنکھوں کے شیشے کو نئی شکل۔",
-    "about.mission": "ہمارا مشن",
+      "Ridefiniamo gli occhiali con artigianato di qualità, design senza tempo e tecnologia all'avanguardia per la prova virtuale.",
+    "about.mission": "La Nostra Missione",
     "about.missionDesc":
-      "لگژری ڈیزائن، آرام اور جدت کو یکجا کرنے والے آنکھوں کے شیشوں کے ساتھ انفرادیت کو بااختیار بنانا۔",
-    "about.vision": "ہماری وژن",
+      "Potenziare l'individualità con occhiali che uniscono design di lusso, comfort e innovazione.",
+    "about.vision": "La Nostra Visione",
     "about.visionDesc":
-      "فیشن آنکھوں کے شیشوں کے تجربات کے لیے پائیدار اور ٹیکنالوجی سے آگے مستقبل کی تعمیر۔",
-    "about.craftsmanship": "پریمیم کاریگری",
+      "Costruire un futuro sostenibile e tecnologicamente avanzato per le esperienze di occhiali di moda.",
+    "about.craftsmanship": "Artigianato di Qualità",
     "about.craftsmanshipDesc":
-      "ہر فریم بہترین مواد کے ساتھ احتیاط سے ڈیزائن اور ہاتھ سے تیار کیا جاتا ہے۔",
-    "about.technology": "اگلی نسل کی ٹیکنالوجی",
+      "Ogni montatura è progettata con cura e realizzata a mano con i materiali migliori.",
+    "about.technology": "Tecnologia di Nuova Generazione",
     "about.technologyDesc":
-      "AI ورچوئل ٹرائی آن ہر اسٹائل کے لیے فوری، حقیقی پیش نظارے فراہم کرتا ہے۔",
-    "about.sustainability": "پائیدار مستقبل",
+      "La prova virtuale con IA offre anteprime istantanee e realistiche per ogni stile.",
+    "about.sustainability": "Futuro Sostenibile",
     "about.sustainabilityDesc":
-      "سبز کل کے لیے ماحول دوست مواد اور قابل ری سائیکل پیکیجنگ۔",
-    "about.team": "ٹیم سے ملیں",
-    "about.contact": "رابطہ کریں",
+      "Materiali ecologici e imballaggi riciclabili per un domani più verde.",
+    "about.team": "Incontra il Team",
+    "about.contact": "Mettiti in Contatto",
     "about.contactDesc":
-      "آپ کے سوالات، فیڈ بیک، یا تعاون کے خیالات ہیں؟ ہم آپ سے سننا پسند کریں گے۔",
-    "about.contactBtn": "رابطہ کریں",
+      "Hai domande, feedback o idee di collaborazione? Ci piacerebbe sentirti.",
+    "about.contactBtn": "Contattaci",
 
     // Contact Page
-    "contact.title": "رابطہ کریں",
+    "contact.title": "Mettiti in Contatto",
     "contact.subtitle":
-      "ہم آپ سے سننا پسند کریں گے! چاہے آپ کے مصنوعات کے بارے میں سوالات ہوں، سپورٹ کی ضرورت ہو، یا صرف ہیلو کہنا چاہتے ہوں — ہماری ٹیم مدد کے لیے تیار ہے۔",
-    "contact.callUs": "ہمیں کال کریں",
-    "contact.emailUs": "ہمیں ای میل کریں",
-    "contact.visitUs": "ہمیں ملنے آئیں",
-    "contact.sendMessage": "ہمیں پیغام بھیجیں",
-    "contact.yourName": "آپ کا نام",
-    "contact.yourEmail": "آپ کا ای میل",
-    "contact.subject": "موضوع",
-    "contact.yourMessage": "آپ کا پیغام",
-    "contact.sendBtn": "پیغام بھیجیں",
+      "Ci piacerebbe sentirti! Che tu abbia domande sui prodotti, bisogno di supporto o voglia semplicemente di salutare, il nostro team è pronto ad aiutarti.",
+    "contact.callUs": "Chiamaci",
+    "contact.emailUs": "Scrivici",
+    "contact.visitUs": "Visita il nostro negozio",
+    "contact.sendMessage": "Inviaci un Messaggio",
+    "contact.yourName": "Il Tuo Nome",
+    "contact.yourEmail": "La Tua Email",
+    "contact.subject": "Oggetto",
+    "contact.yourMessage": "Il Tuo Messaggio",
+    "contact.sendBtn": "Invia Messaggio",
 
     // Try-On Page
-    "tryon.title": "ورچوئل ٹرائی آن",
+    "tryon.title": "Prova Virtuale",
     "tryon.subtitle":
-      "اپنے ویب کیم یا تصویر اپ لوڈ کریں۔ ضرورت ہو تو فٹ ایڈجسٹ کریں۔",
-    "tryon.useWebcam": "ویب کیم استعمال کریں",
-    "tryon.uploadPhoto": "تصویر اپ لوڈ کریں",
-    "tryon.scale": "سکیل",
-    "tryon.verticalOffset": "عمودی آفسیٹ",
+      "Usa la webcam o carica una foto. Regola la vestibilità se necessario.",
+    "tryon.useWebcam": "Usa Webcam",
+    "tryon.uploadPhoto": "Carica Foto",
+    "tryon.scale": "Scala",
+    "tryon.verticalOffset": "Offset Verticale",
 
     // Checkout Pages
-    "checkout.success": "پیمنٹ کامیاب!",
+    "checkout.success": "Pagamento Riuscito!",
     "checkout.successDesc":
-      "آپ کے آرڈر کا شکریہ۔ آپ کی پیمنٹ کامیابی سے پروسیس ہو گئی ہے۔",
+      "Grazie per il tuo ordine. Il tuo pagamento è stato elaborato con successo.",
     "checkout.emailSent":
-      "آپ کے ای میل ایڈریس پر تصدیقی ای میل بھیج دیا گیا ہے۔",
+      "Un'email di conferma è stata inviata al tuo indirizzo email.",
     "checkout.orderProcessed":
-      "آپ کا آرڈر 2-3 کاروباری دنوں میں پروسیس اور شپ ہو جائے گا۔",
-    "checkout.orderId": "آرڈر ID",
-    "checkout.viewOrders": "میرے آرڈرز دیکھیں",
-    "checkout.continueShopping": "خریداری جاری رکھیں",
-    "checkout.cancelled": "پیمنٹ منسوخ",
+      "Il tuo ordine verrà elaborato e spedito entro 2-3 giorni lavorativi.",
+    "checkout.orderId": "ID Ordine",
+    "checkout.viewOrders": "Visualizza i Miei Ordini",
+    "checkout.continueShopping": "Continua gli Acquisti",
+    "checkout.cancelled": "Pagamento Annullato",
     "checkout.cancelledDesc":
-      "آپ کی پیمنٹ منسوخ کر دی گئی۔ آپ کے اکاؤنٹ سے کوئی چارج نہیں کیا گیا۔",
+      "Il tuo pagamento è stato annullato. Non sono stati addebitati importi sul tuo account.",
     "checkout.contactSupport":
-      "اگر آپ کو چیک آؤٹ کے دوران کوئی مسئلہ آیا، تو براہ کرم دوبارہ کوشش کریں یا ہماری سپورٹ ٹیم سے رابطہ کریں۔",
-    "checkout.returnToCart": "ٹوکری میں واپس جائیں",
+      "Se hai riscontrato problemi durante il checkout, riprova or contatta il nostro team di supporto.",
+    "checkout.returnToCart": "Torna al Carrello",
 
     // Auth Pages
-    "auth.signInTitle": "اپنے اکاؤنٹ میں سائن ان کریں",
-    "auth.continueAsGuest": "مہمان کے طور پر جاری رکھیں",
-    "auth.emailAddress": "ای میل ایڈریس",
-    "auth.password": "پاس ورڈ",
-    "auth.enterEmail": "اپنا ای میل درج کریں",
-    "auth.enterPassword": "اپنا پاس ورڈ درج کریں",
-    "auth.signingIn": "سائن ان ہو رہا ہے...",
-    "auth.signInWithGoogle": "Google کے ساتھ سائن ان",
-    "auth.demoCredentials": "ڈیمو کریڈنشلز",
-    "auth.invalidCredentials": "غلط کریڈنشلز",
-    "auth.errorOccurred": "ایک خرابی ہوئی۔ براہ کرم دوبارہ کوشش کریں۔",
-    "auth.googleSignInFailed": "Google سائن ان ناکام",
+    "auth.signInTitle": "Accedi al tuo account",
+    "auth.continueAsGuest": "continua come ospite",
+    "auth.emailAddress": "Indirizzo email",
+    "auth.password": "Password",
+    "auth.enterEmail": "Inserisci la tua email",
+    "auth.enterPassword": "Inserisci la tua password",
+    "auth.signingIn": "Accesso in corso...",
+    "auth.signInWithGoogle": "Accedi con Google",
+    "auth.demoCredentials": "Credenziali demo",
+    "auth.invalidCredentials": "Credenziali non valide",
+    "auth.errorOccurred": "Si è verificato un errore. Riprova.",
+    "auth.googleSignInFailed": "Accesso con Google fallito",
+
+    // Common
+    "common.loading": "Caricamento...",
+    "common.error": "Errore",
+    "common.success": "Successo",
+    "common.cancel": "Annulla",
+    "common.save": "Salva",
+    "common.edit": "Modifica",
+    "common.delete": "Elimina",
+    "common.close": "Chiudi",
+    "common.back": "Indietro",
+    "common.next": "Avanti",
+    "common.previous": "Precedente",
   },
 
   FR: {
@@ -411,7 +437,7 @@ const translations = {
     "hero.title": "Lunettes de Luxe",
     "hero.subtitle": "Essayage Virtuel",
     "hero.description":
-      "Découvrez l’élégance intemporelle avec notre expérience d’essai virtuel alimentée par l’IA.",
+      "Découvrez l'élégance intemporelle avec notre expérience d'essai virtuel alimentée par l'IA.",
     "hero.shopNow": "Acheter Maintenant",
     "hero.contactUs": "Nous Contacter",
 
@@ -505,7 +531,7 @@ const translations = {
     "common.close": "Fermer",
     "common.back": "Retour",
     "common.next": "Suivant",
-    "common.previous": "Précédent",
+    "common.previous": "Precedente",
 
     // About Page
     "about.title": "À propos de nous",
@@ -588,208 +614,217 @@ const translations = {
     "auth.googleSignInFailed": "Connexion Google échouée",
   },
 
-  AR: {
+  DE: {
     // Navigation
-    "nav.home": "الرئيسية",
-    "nav.tryon": "جرب",
-    "nav.about": "من نحن",
-    "nav.categories": "الفئات",
-    "nav.contact": "اتصل بنا",
-    "nav.shop": "المتجر",
-    "nav.men": "رجال",
-    "nav.women": "نساء",
-    "nav.kids": "أطفال",
-    "nav.blueLight": "الضوء الأزرق",
-    "nav.sunglasses": "النظارات الشمسية",
+    "nav.home": "Startseite",
+    "nav.tryon": "Anprobieren",
+    "nav.about": "Über uns",
+    "nav.categories": "Kategorien",
+    "nav.contact": "Kontakt",
+    "nav.shop": "Shop",
+    "nav.men": "Herren",
+    "nav.women": "Damen",
+    "nav.kids": "Kinder",
+    "nav.blueLight": "Blaulichtfilter",
+    "nav.sunglasses": "Sonnenbrillen",
 
-    "hero.title": "نظارات فاخرة",
-    "hero.subtitle": "تجربة افتراضية",
+    "hero.title": "Luxusbrillen",
+    "hero.subtitle": "Virtuelle Anprobe",
     "hero.description":
-      "اكتشف الأناقة الخالدة مع تجربتنا الافتراضية المدعومة بالذكاء الاصطناعي.",
-    "hero.shopNow": "تسوق الآن",
-    "hero.contactUs": "اتصل بنا",
+      "Entdecken Sie zeitlose Eleganz mit unserer KI-gestützten virtuellen Anprobe.",
+    "hero.shopNow": "Jetzt einkaufen",
+    "hero.contactUs": "Kontaktieren Sie uns",
 
     // Top bar
-    "topbar.delivery": "التوصيل خلال 2-5 أيام",
-    "topbar.freeShipping": "شحن مجاني لأكثر من 200$",
+    "topbar.delivery": "Lieferung in 2–5 Tagen",
+    "topbar.freeShipping": "Kostenloser Versand ab 200$",
 
     // Auth
-    "auth.signIn": "تسجيل الدخول",
-    "auth.signOut": "تسجيل الخروج",
-    "auth.admin": "المدير",
+    "auth.signIn": "Anmelden",
+    "auth.signOut": "Abmelden",
+    "auth.admin": "Administrator",
 
     // Cart
-    "cart.title": "سلة التسوق",
-    "cart.empty": "سلة التسوق فارغة",
-    "cart.goToShop": "اذهب للمتجر",
-    "cart.subtotal": "المجموع الفرعي",
-    "cart.checkout": "الدفع",
-    "cart.clear": "مسح السلة",
-    "cart.remove": "إزالة",
-    "cart.increase": "زيادة الكمية",
-    "cart.decrease": "تقليل الكمية",
+    "cart.title": "Warenkorb",
+    "cart.empty": "Ihr Warenkorb ist leer",
+    "cart.goToShop": "Zum Shop",
+    "cart.subtotal": "Zwischensumme",
+    "cart.checkout": "Zur Kasse",
+    "cart.clear": "Warenkorb leeren",
+    "cart.remove": "Entfernen",
+    "cart.increase": "Menge erhöhen",
+    "cart.decrease": "Menge verringern",
 
     // Product
-    "product.addToCart": "أضف للسلة",
-    "product.tryOn": "جرب",
-    "product.outOfStock": "نفد المخزون",
-    "product.lowStock": "مخزون منخفض",
+    "product.addToCart": "In den Warenkorb",
+    "product.tryOn": "Anprobieren",
+    "product.outOfStock": "Nicht auf Lager",
+    "product.lowStock": "Geringer Bestand",
 
     // Account
-    "account.title": "حسابي",
-    "account.welcome": "مرحباً بعودتك",
-    "account.profile": "الملف الشخصي",
-    "account.orders": "الطلبات",
-    "account.gallery": "المعرض",
-    "account.profileDesc": "إدارة معلوماتك الشخصية",
-    "account.ordersDesc": "عرض تاريخ طلباتك",
-    "account.galleryDesc": "صور التجربة الافتراضية",
+    "account.title": "Mein Konto",
+    "account.welcome": "Willkommen zurück",
+    "account.profile": "Profil",
+    "account.orders": "Bestellungen",
+    "account.gallery": "Galerie",
+    "account.profileDesc": "Verwalten Sie Ihre persönlichen Daten",
+    "account.ordersDesc": "Bestellverlauf anzeigen",
+    "account.galleryDesc": "Virtuelle Anprobe-Bilder",
 
     // Admin
-    "admin.dashboard": "لوحة تحكم المدير",
-    "admin.welcome": "مرحباً بك في لوحة تحكم LensVision",
-    "admin.totalProducts": "إجمالي المنتجات",
-    "admin.totalOrders": "إجمالي الطلبات",
-    "admin.totalRevenue": "إجمالي الإيرادات",
-    "admin.totalUsers": "إجمالي المستخدمين",
-    "admin.addProduct": "إضافة منتج جديد",
-    "admin.manageProducts": "إدارة المنتجات",
-    "admin.viewOrders": "عرض الطلبات",
-    "admin.addProductDesc": "إنشاء قائمة منتج جديدة",
-    "admin.manageProductsDesc": "عرض وتعديل المنتجات الموجودة",
-    "admin.viewOrdersDesc": "إدارة طلبات العملاء",
+    "admin.dashboard": "Admin-Dashboard",
+    "admin.welcome": "Willkommen im LensVision-Dashboard",
+    "admin.totalProducts": "Gesamtprodukte",
+    "admin.totalOrders": "Gesamtbestellungen",
+    "admin.totalRevenue": "Gesamtumsatz",
+    "admin.totalUsers": "Gesamtnutzer",
+    "admin.addProduct": "Neues Produkt hinzufügen",
+    "admin.manageProducts": "Produkte verwalten",
+    "admin.viewOrders": "Bestellungen ansehen",
+    "admin.addProductDesc": "Neue Produktliste erstellen",
+    "admin.manageProductsDesc": "Vorhandene Produkte anzeigen und bearbeiten",
+    "admin.viewOrdersDesc": "Kundenbestellungen verwalten",
 
     // Home Page
-    "home.exploreCollection": "استكشف مجموعتنا الأحدث",
-    "home.signatureCollections": "مجموعاتنا المميزة",
-    "home.whyChooseUs": "لماذا تختار Lens Vision؟",
-    "home.premiumQuality": "جودة ممتازة",
-    "home.premiumQualityDesc": "مصنوعة من مواد عالية الجودة للديمومة والأناقة.",
-    "home.smartTechnology": "تقنية ذكية",
+    "home.exploreCollection": "Entdecken Sie unsere neueste Kollektion",
+    "home.signatureCollections": "Unsere Signature-Kollektionen",
+    "home.whyChooseUs": "Warum Lens Vision?",
+    "home.premiumQuality": "Premiumqualität",
+    "home.premiumQualityDesc": "Hergestellt aus hochwertigen Materialien für Langlebigkeit und Stil.",
+    "home.smartTechnology": "Intelligente Technologie",
     "home.smartTechnologyDesc":
-      "مرشحات الضوء الأزرق وتجربة افتراضية مدعومة بالذكاء الاصطناعي.",
-    "home.luxuryDesign": "تصميم فاخر",
-    "home.luxuryDesignDesc": "إطارات تحكي قصة الموضة العصرية.",
-    "home.redefiningEyewear": "إعادة تعريف النظارات",
+      "Blaulichtfilter und KI-gestützte virtuelle Anprobe.",
+    "home.luxuryDesign": "Luxuriöses Design",
+    "home.luxuryDesignDesc": "Fassungen, die Modegeschichten erzählen.",
+    "home.redefiningEyewear": "Brillen neu definiert",
     "home.redefiningDesc":
-      "في LensVision، لا نصنع النظارات فقط. نحن نصنع تجارب تدمج التكنولوجيا والأزياء والفخامة في واحد. كل إطار يحكي قصة أناقة.",
-    "home.experienceTryOn": "جرب التجربة الافتراضية الآن",
+      "Bei LensVision stellen wir nicht nur Brillen her – wir schaffen Erlebnisse, die Technologie, Mode und Luxus vereinen. Jede Fassung erzählt eine storia di eleganza.",
+    "home.experienceTryOn": "Erleben Sie die virtuelle Anprobe jetzt",
     "home.experienceDesc":
-      "ادخل إلى مستقبل النظارات مع تجربة التجربة الافتراضية السينمائية المدعومة بالذكاء الاصطناعي.",
-    "home.startTryOn": "ابدأ التجربة الافتراضية",
+      "Tauchen Sie ein in die Zukunft der Brillen mit der KI-gestützten virtuellen Anprobe im Kino-Stil.",
+    "home.startTryOn": "Virtuelle Anprobe starten",
 
     // Footer
     "footer.brandDesc":
-      "اكتشف مستقبل تسوق النظارات مع تقنية التجربة الافتراضية المدعومة بالذكاء الاصطناعي.",
-    "footer.quickLinks": "روابط سريعة",
-    "footer.categories": "الفئات",
-    "footer.support": "الدعم",
-    "footer.copyright": "© 2025 LensVision. جميع الحقوق محفوظة.",
+      "Entdecken Sie die Zukunft des Brilleneinkaufs mit KI-gestützter virtueller Anprobe.",
+    "footer.quickLinks": "Schnellzugriff",
+    "footer.categories": "Kategorien",
+    "footer.support": "Support",
+    "footer.copyright": "© 2025 LensVision. Alle Rechte vorbehalten.",
 
     // Common
-    "common.loading": "جاري التحميل...",
-    "common.error": "خطأ",
-    "common.success": "نجح",
-    "common.cancel": "إلغاء",
-    "common.save": "حفظ",
-    "common.edit": "تعديل",
-    "common.delete": "حذف",
-    "common.close": "إغلاق",
-    "common.back": "رجوع",
-    "common.next": "التالي",
-    "common.previous": "السابق",
+    "common.loading": "Lädt...",
+    "common.error": "Fehler",
+    "common.success": "Erfolgreich",
+    "common.cancel": "Abbrechen",
+    "common.save": "Speichern",
+    "common.edit": "Bearbeiten",
+    "common.delete": "Löschen",
+    "common.close": "Schließen",
+    "common.back": "Zurück",
+    "common.next": "Weiter",
+    "common.previous": "Zurück",
 
     // About Page
-    "about.title": "من نحن",
+    "about.title": "Über uns",
     "about.subtitle":
-      "إعادة تعريف النظارات مع الحرفية المتميزة والتصميم الخالد وتقنية التجربة الافتراضية المتطورة.",
-    "about.mission": "مهمتنا",
+      "Brillen neu definiert – mit außergewöhnlicher Handwerkskunst, zeitlosem Design und modernster virtueller Anprobetechnologie.",
+    "about.mission": "Unsere Mission",
     "about.missionDesc":
-      "تمكين الفردية بالنظارات التي تدمج التصميم الفاخر والراحة والابتكار.",
-    "about.vision": "رؤيتنا",
+      "Individualität stärken mit Brillen, die Luxusdesign, Komfort und Innovation vereinen.",
+    "about.vision": "Unsere Vision",
     "about.visionDesc":
-      "بناء مستقبل مستدام ومتقدم تقنياً لتجارب النظارات الأنيقة.",
-    "about.craftsmanship": "الحرفية المتميزة",
+      "Eine nachhaltige, technologisch fortschrittliche Zukunft für stilvolle Brillenerlebnisse schaffen.",
+    "about.craftsmanship": "Außergewöhnliche Handwerkskunst",
     "about.craftsmanshipDesc":
-      "كل إطار مصمم بعناية ومصنوع يدوياً بأفضل المواد.",
-    "about.technology": "تقنية الجيل القادم",
+      "Jede Fassung wird sorgfältig entworfen und aus den besten Materialien handgefertigt.",
+    "about.technology": "Next-Gen-Technologie",
     "about.technologyDesc":
-      "التجربة الافتراضية بالذكاء الاصطناعي توفر معاينات فورية وواقعية لكل نمط.",
-    "about.sustainability": "مستقبل مستدام",
+      "Die KI-gestützte virtuelle Anprobe bietet sofortige und realistische Vorschauen für jeden Stil.",
+    "about.sustainability": "Nachhaltige Zukunft",
     "about.sustainabilityDesc":
-      "مواد صديقة للبيئة وتغليف قابل لإعادة التدوير لغد أكثر اخضراراً.",
-    "about.team": "تعرف على الفريق",
-    "about.contact": "تواصل معنا",
+      "Umweltfreundliche Materialien und recycelbare Verpackungen für eine grünere Zukunft.",
+    "about.team": "Lernen Sie unser Team kennen",
+    "about.contact": "Kontaktieren Sie uns",
     "about.contactDesc":
-      "لديك أسئلة أو ملاحظات أو أفكار للتعاون؟ نحب أن نسمع منك.",
-    "about.contactBtn": "تواصل معنا",
+      "Haben Sie Fragen, Feedback oder Kooperationsideen? Wir freuen uns auf Ihre Nachricht.",
+    "about.contactBtn": "Kontakt aufnehmen",
 
     // Contact Page
-    "contact.title": "تواصل معنا",
+    "contact.title": "Kontaktieren Sie uns",
     "contact.subtitle":
-      "نحب أن نسمع منك! سواء كان لديك سؤال حول المنتجات أو تحتاج دعم أو تريد فقط أن تقول مرحباً — فريقنا جاهز للمساعدة.",
-    "contact.callUs": "اتصل بنا",
-    "contact.emailUs": "راسلنا",
-    "contact.visitUs": "زرنا",
-    "contact.sendMessage": "أرسل لنا رسالة",
-    "contact.yourName": "اسمك",
-    "contact.yourEmail": "بريدك الإلكتروني",
-    "contact.subject": "الموضوع",
-    "contact.yourMessage": "رسالتك",
-    "contact.sendBtn": "إرسال الرسالة",
+      "Wir freuen uns, von Ihnen zu hören! Ob Fragen zu unseren Produkten, Supportanfragen oder einfach nur ein Hallo – unser Team ist für Sie da.",
+    "contact.callUs": "Rufen Sie uns an",
+    "contact.emailUs": "Schreiben Sie uns",
+    "contact.visitUs": "Besuchen Sie uns",
+    "contact.sendMessage": "Senden Sie uns eine Nachricht",
+    "contact.yourName": "Ihr Name",
+    "contact.yourEmail": "Ihre E-Mail",
+    "contact.subject": "Betreff",
+    "contact.yourMessage": "Ihre Nachricht",
+    "contact.sendBtn": "Nachricht senden",
 
     // Try-On Page
-    "tryon.title": "التجربة الافتراضية",
+    "tryon.title": "Virtuelle Anprobe",
     "tryon.subtitle":
-      "استخدم كاميرا الويب أو ارفع صورة. اضبط الملاءمة إذا لزم الأمر.",
-    "tryon.useWebcam": "استخدام كاميرا الويب",
-    "tryon.uploadPhoto": "رفع صورة",
-    "tryon.scale": "المقياس",
-    "tryon.verticalOffset": "الإزاحة العمودية",
+      "Verwenden Sie Ihre Webcam oder laden Sie ein Foto hoch. Passen Sie die Größe bei Bedarf an.",
+    "tryon.useWebcam": "Webcam verwenden",
+    "tryon.uploadPhoto": "Foto hochladen",
+    "tryon.scale": "Skalierung",
+    "tryon.verticalOffset": "Vertikaler Versatz",
 
     // Checkout Pages
-    "checkout.success": "تم الدفع بنجاح!",
-    "checkout.successDesc": "شكراً لطلبك. تم معالجة دفعتك بنجاح.",
+    "checkout.success": "Bezahlung erfolgreich!",
+    "checkout.successDesc": "Vielen Dank für Ihre Bestellung. Ihre Zahlung wurde erfolgreich verarbeitet.",
     "checkout.emailSent":
-      "تم إرسال بريد إلكتروني للتأكيد إلى عنوان بريدك الإلكتروني.",
-    "checkout.orderProcessed": "سيتم معالجة طلبك وشحنه خلال 2-3 أيام عمل.",
-    "checkout.orderId": "رقم الطلب",
-    "checkout.viewOrders": "عرض طلباتي",
-    "checkout.continueShopping": "متابعة التسوق",
-    "checkout.cancelled": "تم إلغاء الدفع",
-    "checkout.cancelledDesc": "تم إلغاء دفعتك. لم يتم خصم أي مبلغ من حسابك.",
+      "Eine Bestätigungs-E-Mail wurde an Ihre Adresse gesendet.",
+    "checkout.orderProcessed": "Ihre Bestellung wird innerhalb von 2–3 Werktagen bearbeitet und versandt.",
+    "checkout.orderId": "Bestellnummer",
+    "checkout.viewOrders": "Meine Bestellungen ansehen",
+    "checkout.continueShopping": "Weiter einkaufen",
+    "checkout.cancelled": "Zahlung abgebrochen",
+    "checkout.cancelledDesc": "Ihre Zahlung wurde abgebrochen. Es wurde kein Betrag abgebucht.",
     "checkout.contactSupport":
-      "إذا واجهت أي مشاكل أثناء الدفع، يرجى المحاولة مرة أخرى أو الاتصال بفريق الدعم.",
-    "checkout.returnToCart": "العودة إلى السلة",
+      "Falls Sie Probleme beim Bezahlen hatten, versuchen Sie es bitte erneut oder wenden Sie sich an den Support.",
+    "checkout.returnToCart": "Zurück zum Warenkorb",
 
     // Auth Pages
-    "auth.signInTitle": "تسجيل الدخول إلى حسابك",
-    "auth.continueAsGuest": "المتابعة كضيف",
-    "auth.emailAddress": "عنوان البريد الإلكتروني",
-    "auth.password": "كلمة المرور",
-    "auth.enterEmail": "أدخل بريدك الإلكتروني",
-    "auth.enterPassword": "أدخل كلمة المرور",
-    "auth.signingIn": "جاري تسجيل الدخول...",
-    "auth.signInWithGoogle": "تسجيل الدخول بـ Google",
-    "auth.demoCredentials": "بيانات الاعتماد التجريبية",
-    "auth.invalidCredentials": "بيانات اعتماد غير صحيحة",
-    "auth.errorOccurred": "حدث خطأ. يرجى المحاولة مرة أخرى.",
-    "auth.googleSignInFailed": "فشل تسجيل الدخول بـ Google",
+    "auth.signInTitle": "Melden Sie sich bei Ihrem Konto an",
+    "auth.continueAsGuest": "Als Gast fortfahren",
+    "auth.emailAddress": "E-Mail-Adresse",
+    "auth.password": "Passwort",
+    "auth.enterEmail": "E-Mail eingeben",
+    "auth.enterPassword": "Passwort eingeben",
+    "auth.signingIn": "Anmeldung läuft...",
+    "auth.signInWithGoogle": "Mit Google anmelden",
+    "auth.demoCredentials": "Demo-Zugangsdaten",
+    "auth.invalidCredentials": "Ungültige Zugangsdaten",
+    "auth.errorOccurred": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+    "auth.googleSignInFailed": "Google-Anmeldung fehlgeschlagen"
   },
 };
-
 const useLanguageStore = create<LanguageState>()(
   persist(
     (set, get) => ({
       currentLanguage: "EN",
       setLanguage: (language: Language) => set({ currentLanguage: language }),
-      getTranslation: (key: string) => {
+      getTranslation: (key: TranslationKey) => {
         const currentLang = get().currentLanguage;
-        return (
-          translations[currentLang][
-            key as keyof (typeof translations)[typeof currentLang]
-          ] || key
-        );
+        const langTranslations = translations[currentLang];
+        
+        // Check if the language exists and has the translation
+        if (langTranslations && langTranslations[key]) {
+          return langTranslations[key] as string;
+        }
+        
+        // Fallback to English if translation is missing
+        const englishTranslations = translations.EN;
+        if (englishTranslations && englishTranslations[key]) {
+          return englishTranslations[key] as string;
+        }
+        
+        // Final fallback - return the key itself
+        return key;
       },
     }),
     { name: "language-store" }

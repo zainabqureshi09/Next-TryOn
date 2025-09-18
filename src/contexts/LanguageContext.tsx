@@ -1,14 +1,17 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode } from "react";
-import useLanguageStore, { type Language as StoreLanguage } from "@/store/language";
+import useLanguageStore, { 
+  type Language as StoreLanguage, 
+  type TranslationKey 
+} from "@/store/language";
 
-type UiLanguage = "en" | "ur" | "ar" | "fr"; // UI accepts lowercase codes
+type UiLanguage = "en" | "it" | "de" | "fr"; // UI accepts lowercase codes
 
 interface LanguageContextType {
-  t: (key: string) => string;
+  t: (key: TranslationKey) => string;
   isRTL: boolean;
-  language: UiLanguage | StoreLanguage;
+  language: UiLanguage;
   setLanguage: (lang: UiLanguage | StoreLanguage) => void;
   cycleLanguage: () => void;
 }
@@ -17,7 +20,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 function toStoreCode(lang: string): StoreLanguage {
   const upper = lang.toUpperCase();
-  if (upper === "EN" || upper === "UR" || upper === "AR" || upper === "FR") return upper as StoreLanguage;
+  if (upper === "EN" || upper === "IT" || upper === "DE" || upper === "FR") return upper as StoreLanguage;
   return "EN";
 }
 
@@ -35,14 +38,14 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const cycleLanguage = () => {
-    const order: StoreLanguage[] = ["EN", "UR", "AR", "FR"];
+    const order: StoreLanguage[] = ["EN", "IT", "DE", "FR"];
     const idx = order.indexOf(currentLanguage);
     const next = order[(idx + 1) % order.length];
     setLanguageStore(next);
   };
 
-  const t = (key: string) => getTranslation(key);
-  const isRTL = currentLanguage === "AR" || currentLanguage === "UR";
+  const t = (key: TranslationKey) => getTranslation(key);
+  const isRTL = false; // Corrected: German (DE) and Italian (IT) are not RTL languages
   const uiLanguage = toUiCode(currentLanguage);
 
   return (
@@ -59,5 +62,3 @@ export const useLanguage = (): LanguageContextType => {
   }
   return context;
 };
-
-
