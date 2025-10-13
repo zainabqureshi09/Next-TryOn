@@ -1,25 +1,38 @@
 import { z } from "zod";
 
+export const productAttributeSchema = z.object({
+  name: z.string().min(1, "Attribute name is required"),
+  value: z.string().min(1, "Attribute value is required"),
+});
+
+export const productVariationSchema = z.object({
+  sku: z.string().min(1, "SKU is required for variations"),
+  price: z.number().nonnegative("Price must be a non-negative number"),
+  stock: z.number().int().nonnegative("Stock must be a non-negative integer"),
+  image: z.string().url().optional().or(z.literal("")).or(z.null()),
+  attributes: z.array(productAttributeSchema).min(1, "At least one attribute is required for a variation"),
+  isActive: z.boolean().optional(),
+});
+
 export const productSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1, "Product name is required"),
   title: z.string().optional(),
-  price: z.number().nonnegative(),
-  sku: z.string().optional(),
-  frame: z.string().optional(),
-  image: z.string().url().optional(),
-  overlayImage: z.string().url().optional(),
   description: z.string().optional(),
   category: z.string().optional(),
-  stock: z.number().int().nonnegative().optional(),
+  images: z.array(z.string().url()).optional(),
+  overlayImage: z.string().url().optional().or(z.literal("")).or(z.null()),
+  variations: z.array(productVariationSchema).min(1, "At least one variation is required"),
   isActive: z.boolean().optional(),
 });
 
 export const orderItemSchema = z.object({
   productId: z.string().min(1),
+  variationId: z.string().min(1), // New: ID of the selected variation
   name: z.string().min(1),
   price: z.number().nonnegative(),
   qty: z.number().int().positive(),
   image: z.string().url().nullable().optional(),
+  attributes: z.array(productAttributeSchema).optional(), // New: Attributes of the selected variation
 });
 
 export const orderSchema = z.object({
@@ -33,12 +46,13 @@ export const checkoutSchema = z.object({
   customerEmail: z.string().email().optional(),
   items: z.array(
     z.object({
-      id: z.string().optional(),
-      _id: z.string().optional(),
+      productId: z.string().optional(), // Changed from 'id' to 'productId'
+      variationId: z.string().optional(), // New: variationId
       name: z.string().min(1),
       price: z.number().nonnegative(),
       qty: z.number().int().positive(),
-      image: z.string().url().nullable().optional(),
+      image: z.string().url().nullable().optional().or(z.literal("")).or(z.null()),
+      attributes: z.array(productAttributeSchema).optional(), // New: attributes
     })
   ).min(1),
 });
@@ -50,6 +64,31 @@ export const uploadSchema = z.object({
 export type ProductInput = z.infer<typeof productSchema>;
 export type OrderInput = z.infer<typeof orderSchema>;
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

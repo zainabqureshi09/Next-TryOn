@@ -1,435 +1,794 @@
-// components/VirtualTryOn.tsx
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import NextImage from "next/image";
-import * as faceapi from "face-api.js";
-import * as tf from "@tensorflow/tfjs";
-import "@tensorflow/tfjs-backend-webgl";
-import "@tensorflow/tfjs-backend-cpu";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { Button } from "./ui/button";
+import { Card } from "./ui/card";
+import { Badge } from "./ui/badge";
+import {
+  Sparkles,
+  Camera as CameraIcon,
+  Download,
+  ShoppingCart,
+  Heart,
+  Search,
+  Loader2,
+  Eye,
+  Zap,
+  RefreshCw,
+  Check,
+  Star,
+  Filter,
+  X,
+  ShoppingBag,
+  ArrowRight,
+} from "lucide-react";
+import { useImageCapture } from "@/hooks/use-image-capture";
+import toast, { Toaster } from "react-hot-toast";
+import { Camera, CameraRef } from "./Camera";
+import { useCartContext } from "@/contexts/CartContext";
+import { OnboardingModal } from "./ui/onboarding-modal";
+import type { Product } from "@/data/products";
+import Link from "next/link";
 
-export interface VirtualTryOnProps {
-  productImage: string; // overlay image (single sprite used for glasses/hats/earrings)
-  useCamera: boolean;
-  userImageSrc: string | null;
-  scaleFactor?: number; // overall multiplier for product size
-  verticalOffset?: number; // px offset applied after positioning
-  horizontalOffset?: number; // px offset applied after positioning (new)
-  productType?: "glasses" | "hat" | "earrings";
-  // detectionInterval in ms (how often to run face detection)
-  detectionInterval?: number;
-  // optional: show small product preview below canvas (default true)
-  showProductPreview?: boolean;
+// ✅ Enhanced product interface with virtual try-on support
+interface VirtualTryOnProduct {
+  _id: string;
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  image?: string;
+  category: "men" | "women" | "sunglasses";
+  overlayImage?: string;
+  virtualTryOn?: boolean;
+  specifications?: Record<string, string>;
+  style?: string;
+  color?: string;
+  frameShape?: string;
+  material?: string;
+  rating?: number;
+  reviewCount?: number;
 }
 
-export default function VirtualTryOn({
-  productImage,
-  useCamera,
-  userImageSrc,
-  scaleFactor = 1,
-  verticalOffset = 0,
-  horizontalOffset = 0,
-  productType = "glasses",
-  detectionInterval = 500,
-  showProductPreview = true,
-}: VirtualTryOnProps) {
-  // Refs & state
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const overlayRef = useRef<HTMLImageElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const rafRef = useRef<number | null>(null);
-  const detectionTimerRef = useRef<number | null>(null);
+export const VirtualTryOn = () => {
+  // Product and UI states
+  const [products, setProducts] = useState<VirtualTryOnProduct[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<VirtualTryOnProduct | null>(null);
+  const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(true);
+  const [category, setCategory] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  
+  // Camera and capture states
+  const [isCapturing, setIsCapturing] = useState<boolean>(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
+  
+  // Loading and error states
+  const [isAddingToCart, setIsAddingToCart] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [showProductDetails, setShowProductDetails] = useState<boolean>(false);
+  const [cartCount, setCartCount] = useState<number>(0);
 
-  const [bgImg, setBgImg] = useState<HTMLImageElement | null>(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 640, height: 480 });
-  const [cameraReady, setCameraReady] = useState(false);
-  const [modelsLoaded, setModelsLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [faceLandmarks, setFaceLandmarks] = useState<faceapi.FaceLandmarks68 | null>(null);
+  const cameraRef = useRef<CameraRef>(null);
+  const { downloadImage } = useImageCapture();
+  const cart = useCartContext();
 
-  // ---- 1) Load face-api / TF models (async)
+  // Update cart count when cart changes
   useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        // prefer webgl -> fallback to cpu
-        await tf.setBackend("webgl").catch(async () => {
-          await tf.setBackend("cpu");
-        });
-        await tf.ready();
+    setCartCount(cart.count);
+  }, [cart.count]);
 
-        // Make sure you have model files in /public/models/*
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-          faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
-        ]);
-
-        if (mounted) {
-          setModelsLoaded(true);
-          setError(null);
-        }
-      } catch (e) {
-        console.error("Failed loading models:", e);
-        if (mounted) setError("Failed to load face detection models. Place models in /public/models.");
-      }
-    };
-
-    load();
-    return () => {
-      mounted = false;
-      // dispose TF variables if necessary
-      try {
-        tf.engine().disposeVariables?.();
-      } catch {}
-    };
-  }, []);
-
-  // ---- 2) Load overlay product image (single image used for glasses/hats/earrings)
-  useEffect(() => {
-    if (!productImage) return;
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => (overlayRef.current = img);
-    img.onerror = () => setError("Failed to load product image.");
-    img.src = productImage;
-    // no cleanup necessary; overlayRef will be overwritten on next load
-  }, [productImage]);
-
-  // ---- 3) Load user-uploaded image (if any) into an HTMLImageElement
-  useEffect(() => {
-    if (!userImageSrc) {
-      setBgImg(null);
-      return;
-    }
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      setBgImg(img);
-    };
-    img.onerror = () => setError("Failed to load uploaded image.");
-    img.src = userImageSrc;
-    return () => setBgImg(null);
-  }, [userImageSrc]);
-
-  // ---- 4) Camera lifecycle
-  useEffect(() => {
-    // start camera when useCamera true, stop on false/unmount
-    let active = true;
-    if (!useCamera) {
-      setCameraReady(false);
-      // stop any existing stream
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-      return;
-    }
-
-    const start = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user", width: 1280, height: 720 },
-          audio: false,
-        });
-        if (!active) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => {
-            // try to play (some browsers need .play() call)
-            videoRef.current?.play().catch(() => {});
-            setCameraReady(true);
-          };
-        }
-      } catch (e) {
-        console.error("Camera error:", e);
-        setError("Camera access denied or not available.");
-        setCameraReady(false);
-      }
-    };
-
-    start();
-
-    return () => {
-      active = false;
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-      setCameraReady(false);
-    };
-  }, [useCamera]);
-
-  // ---- 5) Responsive canvas sizing using ResizeObserver
-  useEffect(() => {
-    const update = () => {
-      if (!containerRef.current) return;
-      const width = containerRef.current.clientWidth;
-      const height = Math.round(width * 0.75); // 4:3 default
-      setCanvasSize({ width, height });
-    };
-
-    update();
-    const ro = new ResizeObserver(update);
-    if (containerRef.current) ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, []);
-
-  // ---- 6) Helper: average point
-  const avgPoint = (pts: faceapi.Point[]) => {
-    const sum = pts.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
-    return { x: sum.x / pts.length, y: sum.y / pts.length };
-  };
-
-  // ---- 7) Face detection loop (runs at detectionInterval, cheaper than per-frame)
-  useEffect(() => {
-    if (!modelsLoaded) return;
-
-    const detectOnce = async () => {
-      try {
-        const inputEl = useCamera ? videoRef.current : bgImg;
-        if (!inputEl) {
-          setFaceLandmarks(null);
-          return;
-        }
-
-        // Make sure input has natural/video size
-        const inputWidth = useCamera ? videoRef.current?.videoWidth : bgImg?.naturalWidth;
-        const inputHeight = useCamera ? videoRef.current?.videoHeight : bgImg?.naturalHeight;
-        if (!inputWidth || !inputHeight) {
-          // Wait until sizes available
-          return;
-        }
-
-        const result = await faceapi
-          .detectSingleFace(inputEl as any, new faceapi.TinyFaceDetectorOptions({ inputSize: 256 }))
-          .withFaceLandmarks();
-
-        if (result?.landmarks) {
-          setFaceLandmarks(result.landmarks);
-          setError(null);
-        } else {
-          setFaceLandmarks(null); // no face found
-        }
-      } catch (e) {
-        console.error("Face detection error:", e);
-      }
-    };
-
-    // initial detect (for uploaded images)
-    if (!useCamera) {
-      detectOnce();
-    }
-
-    // schedule interval for camera
-    if (useCamera) {
-      if (detectionTimerRef.current) window.clearInterval(detectionTimerRef.current);
-      detectionTimerRef.current = window.setInterval(detectOnce, detectionInterval);
-    }
-
-    return () => {
-      if (detectionTimerRef.current) {
-        window.clearInterval(detectionTimerRef.current);
-        detectionTimerRef.current = null;
-      }
-    };
-  }, [modelsLoaded, useCamera, bgImg, detectionInterval]);
-
-  // ---- 8) Compute overlay position (maps input coords -> canvas coords)
-  const computeOverlayPosition = () => {
-    const canvas = canvasRef.current;
-    const overlay = overlayRef.current;
-    if (!canvas || !overlay) return null;
-
-    // Determine input dimensions (video or image)
-    const inputW = useCamera ? (videoRef.current?.videoWidth || 0) : (bgImg?.naturalWidth || 0);
-    const inputH = useCamera ? (videoRef.current?.videoHeight || 0) : (bgImg?.naturalHeight || 0);
-
-    if (inputW === 0 || inputH === 0) {
-      return null;
-    }
-
-    // scale from input coordinate system to canvas coordinate system
-    // we compute separate scaleX/scaleY (in case aspect differ), and use avgScale for sizes
-    const scaleX = canvas.width / inputW;
-    const scaleY = canvas.height / inputH;
-    const avgScale = (scaleX + scaleY) / 2;
-
-    // If we have faceLandmarks, compute anchored positions per product type
-    if (faceLandmarks) {
-      // eyes center
-      const leftEyeCenter = avgPoint(faceLandmarks.getLeftEye());
-      const rightEyeCenter = avgPoint(faceLandmarks.getRightEye());
-      const noseTip = faceLandmarks.getNose()[3]; // approximate center of nose tip
-      const jaw = faceLandmarks.getJawOutline();
-
-      // helper: convert input point to canvas point
-      const toCanvas = (p: faceapi.Point) => ({ x: p.x * scaleX, y: p.y * scaleY });
-
-      if (productType === "glasses") {
-        // base width from eye distance
-        const eyeDistance = Math.hypot(rightEyeCenter.x - leftEyeCenter.x, rightEyeCenter.y - leftEyeCenter.y);
-        const width = eyeDistance * 2.2 * avgScale * scaleFactor;
-        const height = width * 0.6; // glasses ratio, tweakable per product
-        const centerInput = { x: (leftEyeCenter.x + rightEyeCenter.x) / 2, y: (leftEyeCenter.y + rightEyeCenter.y) / 2 };
-        const center = toCanvas(new faceapi.Point(centerInput.x, centerInput.y));
-        return {
-          x: center.x - width / 2 + horizontalOffset,
-          y: center.y - height / 2 + verticalOffset,
-          width,
-          height,
-        };
-      }
-
-      if (productType === "hat") {
-        // estimate head top position: use nose and jaw to get head height, place hat above nose
-        const jawTop = jaw.reduce((min, p) => (p.y < min ? p.y : min), Infinity);
-        const jawBottom = jaw.reduce((max, p) => (p.y > max ? p.y : max), -Infinity);
-        const headHeight = jawBottom - jawTop || 200;
-        const width = headHeight * 2.0 * avgScale * scaleFactor;
-        const height = width * (overlay.naturalHeight / overlay.naturalWidth || 0.7);
-        const foreheadInput = { x: noseTip.x, y: Math.max(0, noseTip.y - headHeight * 0.35) };
-        const center = toCanvas(new faceapi.Point(foreheadInput.x, foreheadInput.y));
-        return {
-          x: center.x - width / 2 + horizontalOffset,
-          y: center.y - height * 1.05 + verticalOffset, // lift hat above forehead
-          width,
-          height,
-        };
-      }
-
-      if (productType === "earrings") {
-        // Earrings: place two small overlays at approximate ear positions using jaw outline
-        // left ear -> jaw[2], right ear -> jaw[14] (approx)
-        const leftEar = jaw[2];
-        const rightEar = jaw[14];
-        const earSize = (Math.hypot(rightEyeCenter.x - leftEyeCenter.x, rightEyeCenter.y - leftEyeCenter.y) * 0.35) * avgScale * scaleFactor;
-        const left = toCanvas(leftEar);
-        const right = toCanvas(rightEar);
-        return [
-          { x: left.x - earSize / 2 + horizontalOffset, y: left.y - earSize / 2 + verticalOffset, width: earSize, height: earSize },
-          { x: right.x - earSize / 2 + horizontalOffset, y: right.y - earSize / 2 + verticalOffset, width: earSize, height: earSize },
-        ];
-      }
-    }
-
-    // fallback (no face detected): center overlay at reasonable size
-    const fallbackW = canvas.width * 0.45 * scaleFactor;
-    const fallbackH = (overlay.naturalHeight / overlay.naturalWidth) * fallbackW;
-    return {
-      x: canvas.width / 2 - fallbackW / 2 + horizontalOffset,
-      y: canvas.height / 2 - fallbackH / 2 + verticalOffset,
-      width: fallbackW,
-      height: fallbackH,
-    };
-  };
-
-  // ---- 9) Render loop (runs with requestAnimationFrame; draws background + overlay)
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // set canvas resolution to chosen canvasSize
-    canvas.width = canvasSize.width;
-    canvas.height = canvasSize.height;
-
-    const render = () => {
-      // draw background: camera frame if available, else bgImg if uploaded else black
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (useCamera && videoRef.current && cameraReady && videoRef.current.videoWidth > 0) {
-        try {
-          ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        } catch (e) {
-          // sometimes drawImage from video throws early; ignore
-        }
-      } else if (bgImg) {
-        // draw uploaded image filling the canvas area (stretch to fit)
-        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+  // ✅ Toast wrapper
+  const showToast = useCallback(
+    (props: { title: string; description?: string; variant?: "destructive" }) => {
+      if (props.variant === "destructive") {
+        toast.error(`${props.title}${props.description ? ` — ${props.description}` : ""}`);
       } else {
-        ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        toast.success(`${props.title}${props.description ? ` — ${props.description}` : ""}`);
       }
+    },
+    []
+  );
 
-      // draw overlay(s)
-      const overlay = overlayRef.current;
-      if (overlay) {
-        const pos = computeOverlayPosition();
-        if (Array.isArray(pos)) {
-          // multiple overlays (earrings)
-          pos.forEach((p) => {
-            if (p.width > 0 && p.height > 0) ctx.drawImage(overlay, p.x, p.y, p.width, p.height);
-          });
-        } else if (pos) {
-          if (pos.width > 0 && pos.height > 0) ctx.drawImage(overlay, pos.x, pos.y, pos.width, pos.height);
+  // 🔄 Fetch products from API
+  const fetchProducts = useCallback(async () => {
+    try {
+      setIsLoadingProducts(true);
+      const response = await fetch("/api/products?limit=50&virtualTryOn=true");
+      const data = await response.json();
+      
+      if (data.products) {
+        const virtualTryOnProducts = data.products.map((product: any) => ({
+          ...product,
+          id: product._id || product.id,
+          virtualTryOn: true,
+          overlayImage: product.overlayImage || product.image,
+          style: product.style || "classic",
+          color: product.color || "black",
+        }));
+        
+        setProducts(virtualTryOnProducts);
+        if (virtualTryOnProducts.length > 0 && !selectedProduct) {
+          setSelectedProduct(virtualTryOnProducts[0]);
         }
       }
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+      showToast({ 
+        title: "Failed to load products", 
+        description: "Using demo products instead", 
+        variant: "destructive" 
+      });
+      
+      // Fallback to demo data
+      const demoProducts: VirtualTryOnProduct[] = [
+        {
+          _id: "demo-1",
+          id: "demo-1",
+          name: "Classic Aviator",
+          price: 129.99,
+          description: "Timeless aviator frames with UV protection",
+          image: "/assets/frame1.jpg",
+          overlayImage: "/frames/glasses.png",
+          category: "sunglasses",
+          style: "aviator",
+          color: "gold",
+          virtualTryOn: true,
+          rating: 4.8,
+          reviewCount: 152,
+          specifications: { "Frame Material": "Metal", "Lens Type": "UV Protection" }
+        },
+        {
+          _id: "demo-2",
+          id: "demo-2",
+          name: "Elegant Round",
+          price: 99.99,
+          description: "Vintage-inspired round frames perfect for women",
+          image: "/assets/female.jpg",
+          overlayImage: "/frames/glasses2.png",
+          category: "women",
+          style: "round",
+          color: "black",
+          virtualTryOn: true,
+          rating: 4.6,
+          reviewCount: 89,
+          specifications: { "Frame Material": "Acetate", "Lens Type": "Clear" }
+        },
+        {
+          _id: "demo-3",
+          id: "demo-3",
+          name: "Minimal Black",
+          price: 149.99,
+          description: "Professional minimal frames designed for men",
+          image: "/assets/homeMen.jpg",
+          overlayImage: "/frames/glasses.png",
+          category: "men",
+          style: "rectangular",
+          color: "black",
+          virtualTryOn: true,
+          rating: 4.9,
+          reviewCount: 234,
+          specifications: { "Frame Material": "Titanium", "Lens Type": "Blue Light" }
+        },
+        {
+          _id: "demo-4",
+          id: "demo-4",
+          name: "Cat Eye Classic",
+          price: 109.99,
+          description: "Sophisticated cat eye frames for elegant style",
+          image: "/assets/female.jpg",
+          overlayImage: "/frames/glasses2.png",
+          category: "women",
+          style: "cat-eye",
+          color: "tortoiseshell",
+          virtualTryOn: true,
+          rating: 4.7,
+          reviewCount: 176,
+          specifications: { "Frame Material": "Acetate", "Lens Type": "Anti-Glare" }
+        },
+        {
+          _id: "demo-5",
+          id: "demo-5",
+          name: "Sport Shield",
+          price: 119.99,
+          description: "Durable wrap-around sunglasses with polarized lenses",
+          image: "/assets/slideHome.jpg",
+          overlayImage: "/frames/glasses.png",
+          category: "sunglasses",
+          style: "sport",
+          color: "black",
+          virtualTryOn: true,
+          rating: 4.5,
+          reviewCount: 98,
+          specifications: { "Frame Material": "Polymer", "Lens Type": "Polarized UV" }
+        },
+      ];
+      
+      setProducts(demoProducts);
+      setSelectedProduct(demoProducts[0]);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, [selectedProduct, showToast]);
 
-      rafRef.current = requestAnimationFrame(render);
-    };
-
-    rafRef.current = requestAnimationFrame(render);
-
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    };
-  }, [canvasSize, bgImg, cameraReady, faceLandmarks, overlayRef.current, scaleFactor, verticalOffset, horizontalOffset, useCamera, productType]);
-
-  // ---- 10) Cleanup on unmount: stop camera & detection timer
+  // Load products on mount
   useEffect(() => {
-    return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-      if (detectionTimerRef.current) {
-        window.clearInterval(detectionTimerRef.current);
-        detectionTimerRef.current = null;
-      }
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-    };
+    fetchProducts();
+  }, [fetchProducts]);
+
+  // 🧭 Onboarding Modal
+  useEffect(() => {
+    const hasSeenOnboarding = localStorage.getItem("hasSeenOnboarding");
+    if (!hasSeenOnboarding) setShowOnboarding(true);
   }, []);
 
-  // ---- 11) Small debug/status UI below canvas (you can hide by props)
+  const handleCloseOnboarding = useCallback(() => {
+    setShowOnboarding(false);
+    localStorage.setItem("hasSeenOnboarding", "true");
+  }, []);
+
+  // ✅ Dynamic product filtering
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      // Category filter
+      const catMatch = category === "all" || product.category === category;
+      
+      // Search filter
+      const searchMatch = !searchTerm || 
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      return catMatch && searchMatch;
+    });
+  }, [products, category, searchTerm]);
+
+  // Available categories
+  const availableCategories = ["men", "women", "sunglasses"];
+
+  // 📸 Capture snapshot
+  const handleCapture = useCallback(async () => {
+    if (!cameraRef.current?.captureImage) {
+      showToast({ title: "Camera not ready", description: "Please ensure your camera is active.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      setIsCapturing(true);
+      const image = await cameraRef.current.captureImage();
+      setCapturedImage(image);
+      showToast({ title: "Image captured", description: "Preview ready!" });
+    } catch {
+      showToast({ title: "Capture failed", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setIsCapturing(false);
+    }
+  }, [showToast]);
+
+  // 💾 Save snapshot
+  const handleSave = useCallback(() => {
+    if (!capturedImage) {
+      showToast({ title: "No image", description: "Capture or upload an image first.", variant: "destructive" });
+      return;
+    }
+    downloadImage(capturedImage, `tryon-${Date.now()}.png`);
+    showToast({ title: "Image saved", description: "Downloaded successfully!" });
+  }, [capturedImage, downloadImage, showToast]);
+
+  // 🛒 Add to cart
+  const handleAddToCart = useCallback(
+    async (product: VirtualTryOnProduct) => {
+      if (!product?.id) {
+        showToast({ title: "Error", description: "Invalid product.", variant: "destructive" });
+        return;
+      }
+
+      try {
+        setIsAddingToCart(product.id);
+        await cart.addToCart(product, 1);
+        showToast({ 
+          title: "Added to cart", 
+          description: `${product.name} ($${product.price}) added successfully.` 
+        });
+      } catch (err) {
+        console.error("Add to cart error:", err);
+        showToast({ 
+          title: "Error", 
+          description: err instanceof Error ? err.message : "Failed to add item to cart.", 
+          variant: "destructive" 
+        });
+      } finally {
+        setIsAddingToCart(null);
+      }
+    },
+    [cart, showToast]
+  );
+
+  // ❤️ Toggle favorite
+  const toggleFavorite = useCallback((productId: string) => {
+    setFavorites(prev => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(productId)) {
+        newFavorites.delete(productId);
+        showToast({ title: "Removed from favorites" });
+      } else {
+        newFavorites.add(productId);
+        showToast({ title: "Added to favorites" });
+      }
+      return newFavorites;
+    });
+  }, [showToast]);
+
+  // 🔄 Select product for try-on
+  const handleSelectProduct = useCallback((product: VirtualTryOnProduct) => {
+    setSelectedProduct(product);
+    showToast({ 
+      title: "Product selected", 
+      description: `Now trying on ${product.name}` 
+    });
+  }, [showToast]);
+
   return (
-    <div ref={containerRef} className="w-full flex flex-col items-center gap-2">
-      {/* Hidden video element used as input when camera active */}
-      {useCamera && (
-        <video ref={videoRef} autoPlay muted playsInline className="hidden" />
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <Toaster position="top-right" toastOptions={{
+        duration: 3000,
+        style: {
+          background: 'white',
+          color: '#374151',
+          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+          border: '1px solid #e5e7eb'
+        }
+      }} />
+
+      {/* 🎓 Onboarding Modal */}
+      {showOnboarding && (
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onClose={handleCloseOnboarding}
+        />
       )}
 
-      <canvas
-        ref={canvasRef}
-        style={{ width: "100%", maxWidth: 640, height: canvasSize.height }}
-        className="border rounded-xl bg-black"
-      />
-
-      {error && <div className="mt-2 p-2 bg-red-100 text-red-700 rounded">{error}</div>}
-
-      <div className="mt-2 flex items-center gap-3">
-        <div className="text-sm text-gray-600">
-          {modelsLoaded ? (
-            faceLandmarks ? (
-              <span className="text-green-600">Face detected</span>
-            ) : (
-              <span className="text-yellow-600">Searching for face...</span>
-            )
-          ) : (
-            <span className="text-gray-500">Loading models...</span>
-          )}
-        </div>
-
-        {showProductPreview && overlayRef.current && (
-          <div className="ml-2">
-            <NextImage src={productImage} alt="product preview" width={60} height={60} unoptimized className="rounded" />
+      {/* 🧠 Enhanced Header */}
+      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-xl sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                <Eye className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">LensVision</h1>
+                <p className="text-sm text-gray-600">AI-Powered Virtual Try-On</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-green-100 text-green-700 border-green-200 flex items-center gap-2">
+                  <CameraIcon className="w-4 h-4" />
+                  Live Camera Mode
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link href="/cart" className="relative">
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4" />
+                    Cart
+                    {cartCount > 0 && (
+                      <Badge className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5">
+                        {cartCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
+      </header>
+
+      {/* 🎥 Main Content */}
+      <div className="flex-1 container mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* Left: Try-On Camera Area */}
+          <div className="xl:col-span-2">
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              {/* Try-On Header */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Live Virtual Try-On</h2>
+                    <p className="text-sm text-gray-600">Real-time AI face detection and glasses overlay</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {selectedProduct && (
+                      <Badge className="bg-green-100 text-green-700 border-green-200">
+                        <Eye className="w-3 h-3 mr-1" />
+                        Trying: {selectedProduct.name}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Camera Area */}
+              <div className="relative">
+                <div className="relative w-full aspect-[4/3] bg-gray-900 rounded-b-2xl overflow-hidden">
+                  <Camera ref={cameraRef} selectedGlasses={selectedProduct?.id || ""} />
+                  
+                  {/* Camera Controls Overlay */}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent p-6">
+                    <div className="flex items-center justify-center gap-4">
+                      <Button 
+                        onClick={handleCapture} 
+                        disabled={isCapturing}
+                        size="lg"
+                        className="bg-white text-gray-900 hover:bg-gray-100"
+                      >
+                        {isCapturing ? (
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        ) : (
+                          <CameraIcon className="w-5 h-5 mr-2" />
+                        )}
+                        {isCapturing ? "Capturing..." : "Capture Photo"}
+                      </Button>
+                      
+                      {capturedImage && (
+                        <Button 
+                          onClick={handleSave} 
+                          variant="outline"
+                          size="lg"
+                          className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                        >
+                          <Download className="w-5 h-5 mr-2" />
+                          Save
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className="absolute top-4 right-4">
+                    <Badge 
+                      variant={isCapturing ? "destructive" : "outline"}
+                      className="bg-black/20 text-white border-white/20"
+                    >
+                      {isCapturing ? "Capturing..." : "Live"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Selected Product Info */}
+            {selectedProduct && (
+              <div className="mt-6">
+                <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b">
+                    <h3 className="text-lg font-semibold text-gray-900">Current Selection</h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-20 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                        <img 
+                          src={selectedProduct.image || selectedProduct.overlayImage} 
+                          alt={selectedProduct.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{selectedProduct.name}</h4>
+                            <p className="text-lg font-bold text-purple-600">${selectedProduct.price}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => toggleFavorite(selectedProduct.id)}
+                            className={`p-2 ${favorites.has(selectedProduct.id) ? "text-red-500" : "text-gray-400"}`}
+                          >
+                            <Heart className={`w-5 h-5 ${favorites.has(selectedProduct.id) ? "fill-current" : ""}`} />
+                          </Button>
+                        </div>
+                        
+                        {selectedProduct.rating && (
+                          <div className="flex items-center gap-1 mb-3">
+                            <div className="flex">
+                              {[...Array(5)].map((_, i) => (
+                                <Star 
+                                  key={i} 
+                                  className={`w-4 h-4 ${i < Math.floor(selectedProduct.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} 
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm text-gray-600">({selectedProduct.reviewCount} reviews)</span>
+                          </div>
+                        )}
+                        
+                        <p className="text-sm text-gray-600 mb-4">{selectedProduct.description}</p>
+                        
+                        {selectedProduct.specifications && (
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {Object.entries(selectedProduct.specifications).map(([key, value]) => (
+                              <Badge key={key} className="bg-gray-100 text-gray-700 text-xs">
+                                {key}: {value}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <Button 
+                          onClick={() => handleAddToCart(selectedProduct)}
+                          disabled={isAddingToCart === selectedProduct.id}
+                          size="lg"
+                          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                        >
+                          {isAddingToCart === selectedProduct.id ? (
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          ) : (
+                            <ShoppingCart className="w-5 h-5 mr-2" />
+                          )}
+                          Add to Cart - ${selectedProduct.price}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Captured Image Preview */}
+            {capturedImage && (
+              <div className="mt-6">
+                <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b">
+                    <h3 className="text-lg font-semibold text-gray-900">Captured Photo</h3>
+                  </div>
+                  <div className="p-6">
+                    <img src={capturedImage} alt="Preview" className="rounded-xl border w-full h-auto shadow-sm" />
+                    <div className="mt-4 flex gap-3">
+                      <Button variant="outline" onClick={() => setCapturedImage(null)} className="flex-1">
+                        <X className="w-4 h-4 mr-2" />
+                        Clear
+                      </Button>
+                      <Button onClick={handleSave} className="flex-1">
+                        <Download className="w-4 h-4 mr-2" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: Product Selection Sidebar */}
+          <div className="xl:col-span-1">
+            <div className="sticky top-24 space-y-6">
+              {/* Search */}
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Find Your Perfect Frames</h2>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search glasses..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Categories */}
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Categories</h2>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant={category === "all" ? "default" : "outline"} 
+                    onClick={() => setCategory("all")}
+                    className="justify-start h-12"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    All
+                  </Button>
+                  {availableCategories.map((cat) => (
+                    <Button 
+                      key={cat} 
+                      variant={category === cat ? "default" : "outline"} 
+                      onClick={() => setCategory(cat)}
+                      className="justify-start h-12"
+                    >
+                      {cat === "men" && <span className="w-4 h-4 mr-2">👨</span>}
+                      {cat === "women" && <span className="w-4 h-4 mr-2">👩</span>}
+                      {cat === "sunglasses" && <span className="w-4 h-4 mr-2">🕶️</span>}
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+
+              {/* Product List */}
+              <div className="bg-white rounded-2xl shadow-lg">
+                <div className="px-6 py-4 border-b border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-gray-900">Available Frames</h2>
+                    <Badge className="bg-purple-100 text-purple-700">
+                      {filteredProducts.length} styles
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div className="p-6">
+                  {isLoadingProducts ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="text-center">
+                        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-purple-500" />
+                        <p className="text-gray-600">Loading amazing frames...</p>
+                      </div>
+                    </div>
+                  ) : filteredProducts.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Eye className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No frames found</h3>
+                      <p className="text-gray-600 mb-4">Try adjusting your search or category</p>
+                      <Button 
+                        onClick={() => {
+                          setCategory("all");
+                          setSearchTerm("");
+                        }}
+                        className="bg-purple-500 hover:bg-purple-600"
+                      >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Show All Frames
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar">
+                      {filteredProducts.map((product) => (
+                        <div
+                          key={product.id}
+                          className={`group relative p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-md ${
+                            selectedProduct?.id === product.id 
+                              ? "border-purple-300 bg-purple-50 shadow-sm" 
+                              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                          }`}
+                          onClick={() => handleSelectProduct(product)}
+                        >
+                          {/* Selection Indicator */}
+                          {selectedProduct?.id === product.id && (
+                            <div className="absolute top-2 left-2">
+                              <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                                <Check className="w-4 h-4 text-white" />
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center gap-4">
+                            {/* Product Image */}
+                            <div className="w-20 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center overflow-hidden shadow-sm">
+                              <img 
+                                src={product.image || product.overlayImage || "/frames/glasses.png"} 
+                                alt={product.name} 
+                                className="w-full h-full object-cover transition-transform group-hover:scale-110" 
+                              />
+                            </div>
+                            
+                            {/* Product Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between mb-1">
+                                <h3 className="font-semibold text-gray-900 truncate pr-2">{product.name}</h3>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleFavorite(product.id);
+                                  }}
+                                  className={`p-1 ${favorites.has(product.id) ? "text-red-500" : "text-gray-400 hover:text-red-400"}`}
+                                >
+                                  <Heart className={`w-4 h-4 ${favorites.has(product.id) ? "fill-current" : ""}`} />
+                                </Button>
+                              </div>
+                              
+                              <div className="flex items-center gap-2 mb-2">
+                                <p className="text-lg font-bold text-purple-600">${product.price}</p>
+                                {product.rating && (
+                                  <div className="flex items-center gap-1">
+                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                    <span className="text-xs text-gray-600">{product.rating}</span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <p className="text-xs text-gray-600 mb-2 line-clamp-2">{product.description}</p>
+                              
+                              <div className="flex items-center gap-2 mb-3">
+                                <Badge className="bg-gray-100 text-gray-700 text-xs py-1">
+                                  {product.category}
+                                </Badge>
+                                {product.style && (
+                                  <Badge className="bg-blue-100 text-blue-700 text-xs py-1">
+                                    {product.style}
+                                  </Badge>
+                                )}
+                              </div>
+                              
+                              <Button
+                                size="sm"
+                                disabled={isAddingToCart === product.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddToCart(product);
+                                }}
+                                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-none"
+                              >
+                                {isAddingToCart === product.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                ) : (
+                                  <ShoppingCart className="w-4 h-4 mr-2" />
+                                )}
+                                {isAddingToCart === product.id ? "Adding..." : "Add to Cart"}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <div className="space-y-4">
+                  <Link href="/shop" className="block">
+                    <Button variant="outline" className="w-full justify-between h-12">
+                      <span>Browse Full Collection</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  
+                  <Link href="/cart" className="block">
+                    <Button className="w-full justify-between h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+                      <span>View Cart ({cartCount})</span>
+                      <ShoppingBag className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+      
+      {/* Custom CSS for scrollbar */}
+      <style jsx global>{`
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #d1d5db #f3f4f6;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f3f4f6;
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #d1d5db;
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #9ca3af;
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
     </div>
   );
-}
+};

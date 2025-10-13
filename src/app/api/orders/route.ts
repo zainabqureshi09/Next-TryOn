@@ -1,37 +1,31 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/dbConnect";
+import dbConnect from "@/lib/mongodb";
 import Order from "@/lib/models/Order";
-import { orderSchema } from "@/lib/validation";
-import { keyFromRequest, rateLimit } from "@/lib/rateLimit";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+// ====================
+// 📦 GET /api/orders
+// ====================
 export async function GET() {
-  const session = await getServerSession(authOptions as any);
-  const role = (session as any)?.user?.role;
-  if (!session || role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  await dbConnect();
-  const orders = await Order.find().sort({ createdAt: -1 }).lean();
-  return NextResponse.json(orders);
-}
-
-export async function POST(req: Request) {
   try {
-    const allowed = await rateLimit(keyFromRequest(req, "orders:post"), { intervalMs: 60_000, max: 10 });
-    if (!allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
+
+    if (!session || !userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     await dbConnect();
-    const body = await req.json();
-    const parsed = orderSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-    }
-    const subtotal = parsed.data.items.reduce((sum, it) => sum + (it.price || 0) * (it.qty || 0), 0);
-    const created = await Order.create({ ...parsed.data, subtotal, status: "pending" });
-    return NextResponse.json(created, { status: 201 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || "Failed to create order" }, { status: 400 });
+
+    const orders = await Order.find({ userId }).sort({ createdAt: -1 }).lean();
+
+    return NextResponse.json(orders);
+  } catch (error: any) {
+    console.error("Error fetching orders:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to fetch orders" },
+      { status: 500 }
+    );
   }
 }

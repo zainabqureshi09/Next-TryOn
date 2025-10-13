@@ -15,12 +15,27 @@ const config: Config = {
   		},
   		animation: {
   			'marquee': 'marquee 18s linear infinite',
+        'fadeIn': 'fadeIn 0.5s ease-in-out forwards',
+        'slideIn': 'slideIn 0.4s ease-out forwards',
+        'scaleIn': 'scaleIn 0.3s ease-out forwards',
   		},
   		keyframes: {
   			marquee: {
   				'0%': { transform: 'translateX(0%)' },
   				'100%': { transform: 'translateX(-50%)' },
   			},
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideIn: {
+          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        scaleIn: {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
@@ -32,6 +47,7 @@ const config: Config = {
   			foreground: 'hsl(var(--foreground))',
   			card: {
   				DEFAULT: 'hsl(var(--card))',
+          dark: 'hsl(var(--card-dark))',
   				foreground: 'hsl(var(--card-foreground))'
   			},
   			popover: {
@@ -40,10 +56,12 @@ const config: Config = {
   			},
   			primary: {
   				DEFAULT: 'hsl(var(--primary))',
+          dark: 'hsl(var(--primary-dark))',
   				foreground: 'hsl(var(--primary-foreground))'
   			},
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
+          dark: 'hsl(var(--secondary-dark))',
   				foreground: 'hsl(var(--secondary-foreground))'
   			},
   			muted: {

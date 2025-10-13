@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import useTranslation from "@/hooks/use-translation";
 import { useEffect, useState } from "react";
-import VirtualTryOn from "@/components/VirtualTryOn";
+import { VirtualTryOn } from "@/components/VirtualTryOn";
 
 async function getProduct(id: string) {
   try {
@@ -24,13 +24,13 @@ interface ProductPageProps {
   params: { id: string };
 }
 
-function inferFrameId(overlayUrl?: string | null) {
-  if (!overlayUrl) return undefined;
-  const lower = overlayUrl.toLowerCase();
-  if (lower.includes("aviator")) return "aviator";
-  if (lower.includes("bluelight") || lower.includes("blue")) return "bluelight";
-  if (lower.includes("round")) return "round";
-  if (lower.includes("classic")) return "classic";
+// ✅ ab categories sirf men, women, sunglasses rakhein
+function inferCategory(category?: string | null) {
+  if (!category) return undefined;
+  const lower = category.toLowerCase();
+  if (lower.includes("men")) return "men";
+  if (lower.includes("women")) return "women";
+  if (lower.includes("sunglasses")) return "sunglasses";
   return undefined;
 }
 
@@ -53,10 +53,10 @@ export default function ProductPage({ params }: ProductPageProps) {
   const normalized: ProductType = {
     id: product._id || product.id,
     name: product.name,
-    price: Number(product.price),
     image: product.image || product.secure_url || null,
     overlayImage: product.overlayImage || null,
-  };
+    price: Number((product as any).price),
+  } as unknown as ProductType;
 
   // Handle multiple / single images from DB
   const images: string[] =
@@ -68,7 +68,8 @@ export default function ProductPage({ params }: ProductPageProps) {
       ? [product.secure_url]
       : [];
 
-  const frameId = inferFrameId(product.overlayImage || product.image);
+  // ✅ ab yahan se aviator/round hata kar sirf men, women, sunglasses check karenge
+  const category = inferCategory(product.category);
 
   return (
     <section className="max-w-5xl mx-auto px-6 py-12">
@@ -102,13 +103,7 @@ export default function ProductPage({ params }: ProductPageProps) {
           )}
 
           <div className="mt-6">
-            <VirtualTryOn
-              productImage={product.overlayImage || product.image || ""}
-              useCamera={false}
-              userImageSrc={null}
-              scaleFactor={1}
-              verticalOffset={0}
-            />
+            <VirtualTryOn />
           </div>
         </div>
 
@@ -118,7 +113,7 @@ export default function ProductPage({ params }: ProductPageProps) {
             {product.name}
           </h1>
           <p className="text-xl font-semibold text-purple-900 mb-4">
-            ${Number(product.price).toFixed(2)}
+            ${Number((product as any).price).toFixed(2)}
           </p>
           {product.description && (
             <p className="text-gray-700 mb-6 leading-relaxed">
@@ -126,14 +121,15 @@ export default function ProductPage({ params }: ProductPageProps) {
             </p>
           )}
 
+          {/* ✅ Add to Cart + Category Try On Link */}
           <div className="flex items-center gap-3">
             <AddToCartButton product={normalized} />
-            {frameId && (
+            {category && (
               <Link
-                href={`/tryon?overlay=${frameId}`}
+                href={`/category/${category}`}
                 className="px-5 py-2 rounded-lg border border-purple-700 text-purple-700 hover:bg-purple-50"
               >
-                {t("product.tryOn")}
+                Explore {category}
               </Link>
             )}
           </div>

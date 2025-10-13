@@ -10,6 +10,7 @@ import { useSession, signOut } from "next-auth/react";
 import useCart from "@/hooks/use-cart";
 import { useTranslation } from "@/hooks/use-translation";
 import VirtualTryOnLogo from "./Logo";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 type NavItem = {
   name: string;
@@ -23,10 +24,7 @@ export default function Header() {
   const [isLangOpen, setIsLangOpen] = useState(false);
 
   const pathname = usePathname() || "/";
-  const cartCount =
-    (useCart((s) =>
-      typeof s.count === "function" ? s.count() : s.count ?? 0
-    ) ?? 0) as number;
+  const cartCount = useCart((s) => s.count()) as number;
 
   const { data: session, status } = useSession();
   const { t, currentLanguage, setLanguage } = useTranslation();
@@ -40,8 +38,6 @@ export default function Header() {
       children: [
         { name: t("nav.men"), href: "/catalog/men" },
         { name: t("nav.women"), href: "/catalog/women" },
-        { name: t("nav.kids"), href: "/catalog/kids" },
-        { name: t("nav.blueLight"), href: "/catalog/blue-light" },
         { name: t("nav.sunglasses"), href: "/catalog/sunglasses" },
       ],
     },
@@ -88,10 +84,12 @@ export default function Header() {
 
           {/* Language Dropdown */}
           <div
-            className="relative ml-auto"
+            className="relative ml-auto flex items-center gap-4"
             onMouseEnter={() => setIsLangOpen(true)}
             onMouseLeave={() => setIsLangOpen(false)}
           >
+            <ThemeToggle />
+            
             <button
               aria-haspopup="menu"
               aria-expanded={isLangOpen}

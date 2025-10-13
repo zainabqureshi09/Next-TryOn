@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth"; // ✅ use lib/auth
-import dbConnect from "@/lib/dbConnect";
+import dbConnect from "@/lib/mongodb";
 import UserProfile from "@/lib/models/UserProfile";
 
 export async function GET() {
@@ -31,6 +31,31 @@ export async function PUT(req: Request) {
 
   return NextResponse.json(updated);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

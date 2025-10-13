@@ -1,28 +1,41 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/dbConnect";
+import dbConnect from "@/lib/mongodb";
 import Order from "@/lib/models/Order";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-interface Params { params: { id: string } }
+// ====================
+// 📦 GET /api/orders/[id]
+// ====================
+export async function GET(req: Request, { params }: { params: { id: string } }) {
+  try {
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
+    const role = (session?.user as any)?.role;
 
-export async function PUT(req: Request, { params }: Params) {
-	const session: any = await getServerSession(authOptions as any);
-	if (!session || session?.user?.role !== "admin") {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-	}
-	await dbConnect();
-	const body = await req.json();
-	const status = body?.status as string;
-	if (!status) return NextResponse.json({ error: "Missing status" }, { status: 400 });
-	const updated = await Order.findByIdAndUpdate(params.id, { status }, { new: true });
-	if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
-	return NextResponse.json(updated);
+    if (!session || !userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await dbConnect();
+
+    const order = await Order.findById(params.id).lean();
+
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Admins can view any order, users can only view their own
+    if (role !== "admin" && (order as any).userId?.toString() !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    return NextResponse.json(order);
+  } catch (error: any) {
+    console.error(`Error fetching order ${params.id}:`, error);
+    return NextResponse.json(
+      { error: error.message || "Failed to fetch order" },
+      { status: 500 }
+    );
+  }
 }
-
-
-
-
-
-
-

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth"; // ✅ import from lib
-import dbConnect from "@/lib/dbConnect";
+import dbConnect from "@/lib/mongodb";
 import Snapshot from "@/lib/models/Snapshot";
 
 export async function GET() {
@@ -63,6 +63,31 @@ export async function POST(req: Request) {
 
   return NextResponse.json(created, { status: 201 });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

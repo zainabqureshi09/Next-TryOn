@@ -1,0 +1,5 @@
+ignoredBuiltDependencies:
+  - bcrypt
+  - core-js
+  - core-js-pure
+  - unrs-resolver

@@ -45,8 +45,15 @@ const MarqueeBanner: FC = () => {
           0% { transform: translateX(0%); }
           100% { transform: translateX(-50%); }
         }
+        /* Mobile - Fast */
         .animate-marquee {
-          animation: marquee 25s linear infinite;
+          animation: marquee 12s linear infinite;
+        }
+        /* Desktop - Faster */
+        @media (min-width: 1024px) {
+          .animate-marquee {
+            animation: marquee 10s linear infinite;
+          }
         }
         .animate-marquee:hover {
           animation-play-state: paused;

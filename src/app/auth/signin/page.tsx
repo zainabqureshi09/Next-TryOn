@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,24 @@ import useTranslation from "@/hooks/use-translation";
 
 export default function SignInPage() {
   const { t } = useTranslation();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  // 🔹 Redirect if already logged in
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      const role = (session.user as any).role || "user"; // default role user
+      if (role === "admin") {
+        router.push("/admin/products");
+      } else {
+        router.push("/");
+      }
+    }
+  }, [status, session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,11 +44,10 @@ export default function SignInPage() {
 
       if (result?.error) {
         setError(t("auth.invalidCredentials"));
-      } else if (session?.user) {
-        router.push("/");
-        router.refresh();
       }
+      // session update hone ke baad useEffect handle karega redirect
     } catch (err) {
+      console.error(err);
       setError(t("auth.errorOccurred"));
     } finally {
       setIsLoading(false);
@@ -48,6 +59,7 @@ export default function SignInPage() {
     try {
       await signIn("google", { callbackUrl: "/" });
     } catch (err) {
+      console.error(err);
       setError(t("auth.googleSignInFailed"));
     } finally {
       setIsLoading(false);

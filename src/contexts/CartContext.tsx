@@ -1,67 +1,130 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useCallback } from "react";
 import type { Product } from "@/data/products";
-
-export type CartItem = Product & { qty: number };
+import useCart, { CartItem } from "@/hooks/use-cart";
+import toast from "react-hot-toast";
 
 type CartContextValue = {
   items: CartItem[];
-  addToCart: (product: Product, qty?: number) => void;
-  removeFromCart: (id: string) => void;
-  clearCart: () => void;
+  addToCart: (product: Product, qty?: number) => Promise<void>;
+  updateQuantity: (id: string, qty: number) => Promise<void>;
+  removeFromCart: (id: string) => Promise<void>;
+  clearCart: () => Promise<void>;
   subtotal: number;
   count: number;
+  isLoading: boolean;
 };
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const {
+    items,
+    isLoading,
+    addItem,
+    updateItem,
+    removeItem,
+    clear,
+    subtotal,
+    count,
+    syncWithApi,
+  } = useCart();
 
+  // ✅ Sync cart with API when mounted
   useEffect(() => {
-    try {
-      const raw = typeof window !== "undefined" ? localStorage.getItem("cart-items") : null;
-      if (raw) setItems(JSON.parse(raw));
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("cart-items", JSON.stringify(items));
+    let mounted = true;
+    const syncCart = async () => {
+      try {
+        if (mounted && typeof syncWithApi === "function") {
+          await syncWithApi();
+        }
+      } catch (error) {
+        console.error("Failed to sync cart:", error);
       }
-    } catch {}
-  }, [items]);
+    };
+    syncCart();
+    return () => {
+      mounted = false;
+    };
+  }, [syncWithApi]);
 
-  const addToCart = (product: Product, qty: number = 1) => {
-    setItems((prev) => {
-      const idx = prev.findIndex((it) => it.id === product.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = { ...next[idx], qty: next[idx].qty + qty };
-        return next;
+  // ✅ Add item to cart
+  const addToCart = useCallback(
+    async (product: Product, qty: number = 1) => {
+      if (!product?.id || !product?.name || typeof product?.price !== "number") {
+        toast.error("Invalid product — cannot add to cart.");
+        return;
       }
-      return [...prev, { ...product, qty }];
-    });
+
+      try {
+        await addItem(product, qty);
+        toast.success(`${product.name} added to your cart.`);
+      } catch (error) {
+        console.error("Add to cart error:", error);
+        toast.error("Failed to add item to cart.");
+      }
+    },
+    [addItem]
+  );
+
+  // ✅ Update item quantity
+  const updateQuantity = useCallback(
+    async (id: string, qty: number) => {
+      try {
+        await updateItem(id, qty);
+        toast.success("Cart updated successfully.");
+      } catch (error) {
+        console.error("Update quantity error:", error);
+        toast.error("Failed to update quantity.");
+      }
+    },
+    [updateItem]
+  );
+
+  // ✅ Remove item
+  const removeFromCart = useCallback(
+    async (id: string) => {
+      try {
+        await removeItem(id);
+        toast.success("Item removed from your cart.");
+      } catch (error) {
+        console.error("Remove from cart error:", error);
+        toast.error("Failed to remove item from cart.");
+      }
+    },
+    [removeItem]
+  );
+
+  // ✅ Clear entire cart
+  const clearCart = useCallback(async () => {
+    try {
+      await clear();
+      toast.success("All items removed from your cart.");
+    } catch (error) {
+      console.error("Clear cart error:", error);
+      toast.error("Failed to clear cart.");
+    }
+  }, [clear]);
+
+  const value: CartContextValue = {
+    items,
+    addToCart,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    subtotal: typeof subtotal === "function" ? subtotal() : subtotal,
+    count: typeof count === "function" ? count() : count,
+    isLoading,
   };
-
-  const removeFromCart = (id: string) => {
-    setItems((prev) => prev.filter((it) => it.id !== id));
-  };
-
-  const clearCart = () => setItems([]);
-
-  const subtotal = useMemo(() => items.reduce((sum, it) => sum + it.qty * it.price, 0), [items]);
-  const count = useMemo(() => items.reduce((sum, it) => sum + it.qty, 0), [items]);
-
-  const value: CartContextValue = { items, addToCart, removeFromCart, clearCart, subtotal, count };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
-export function useCart() {
-  const ctx = useContext(CartContext);
-  if (!ctx) throw new Error("useCart must be used within CartProvider");
-  return ctx;
+export function useCartContext() {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error("useCartContext must be used within a CartProvider");
+  }
+  return context;
 }

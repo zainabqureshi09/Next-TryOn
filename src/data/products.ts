@@ -1,14 +1,16 @@
 export type Product = {
+  _id: string;
   id: string;
   name: string;
   price: number;
   description: string;
   image?: string;
-  category: "sunglasses" | "prescription" | "blue-light";
+  category: "men" | "women" | "sunglasses";
 };
 
 export const products: Product[] = [
   {
+    _id: "aviator-001",
     id: "aviator-001",
     name: "Classic Aviator",
     price: 129.99,
@@ -17,36 +19,49 @@ export const products: Product[] = [
     category: "sunglasses",
   },
   {
-    id: "bluelight-101",
-    name: "Blue Light Shield",
+    _id: "men-minimal-101",
+    id: "men-minimal-101",
+    name: "Minimal Black",
     price: 89.99,
-    description: "Reduce eye strain with blue light filtering lenses.",
-    image: "/assets/bluelight.jpg",
-    category: "blue-light",
+    description: "Sleek minimal frames perfect for professional settings.",
+    image: "/assets/homeMen.jpg",
+    category: "men",
   },
   {
-    id: "retro-201",
-    name: "Retro Round",
-    price: 79.99,
+    _id: "women-round-201",
+    id: "women-round-201",
+    name: "Elegant Round",
+    price: 99.99,
     description: "Vintage-inspired round frames with modern comfort.",
     image: "/assets/female.jpg",
-    category: "prescription",
+    category: "women",
   },
   {
-    id: "sleek-301",
-    name: "Sleek Minimal",
+    _id: "men-sport-301",
+    id: "men-sport-301",
+    name: "Sport Pro",
     price: 149.99,
-    description: "Ultra-light prescription frames in matte black.",
+    description: "Athletic frames designed for active lifestyles.",
     image: "/assets/homeMen.jpg",
-    category: "prescription",
+    category: "men",
   },
   {
-    id: "sport-401",
+    _id: "sunglasses-sport-401",
+    id: "sunglasses-sport-401",
     name: "Sport Shield",
-    price: 99.99,
-    description: "Durable wrap-around sunglasses for active lifestyles.",
-    image: "/assets/slide2home.jpg",
+    price: 119.99,
+    description: "Durable wrap-around sunglasses with polarized lenses.",
+    image: "/assets/slideHome.jpg",
     category: "sunglasses",
+  },
+  {
+    _id: "women-cat-501",
+    id: "women-cat-501",
+    name: "Cat Eye Classic",
+    price: 109.99,
+    description: "Sophisticated cat eye frames for elegant style.",
+    image: "/assets/female.jpg",
+    category: "women",
   },
 ];
 

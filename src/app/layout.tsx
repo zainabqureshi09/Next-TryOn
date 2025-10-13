@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Footer from "./components/Footer";
-import Header from "./components/Navbar";
-import Providers from "./providers";
+
 import { CartProvider } from "@/contexts/CartContext";
-import FloatingButtons from "./components/WhatsApp";
+import Providers from "@/app/providers";
+import Header from "@/app/components/Navbar";
+import Footer from "@/app/components/Footer";
+import WhatsAppButton from "./components/WhatsApp";
+import ScrollToTopButton from "./components/Scroller";
+
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -21,7 +24,7 @@ export const metadata: Metadata = {
     "AI eyewear",
   ],
   authors: [{ name: "LensVision", url: "https://lensvision.com" }],
-  metadataBase: new URL("https://lensvision.com"), // ✅ Fix for metadataBase warning
+  metadataBase: new URL("https://lensvision.com"),
   openGraph: {
     title: "LensVision | AI-Powered Virtual Try-On",
     description:
@@ -39,7 +42,6 @@ export const metadata: Metadata = {
   },
 };
 
-// ✅ Viewport config alag rakhna hai
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -53,21 +55,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body
-        className={`${inter.className} bg-gray-50 text-gray-900 antialiased flex flex-col min-h-screen`}
+        className={`${inter.className} bg-gradient-to-br from-background to-background/95 text-foreground antialiased flex flex-col min-h-screen`}
       >
         <Providers>
           <CartProvider>
-            {/* ✅ Header always on top */}
             <Header />
-
-            {/* ✅ Main takes remaining space */}
             <main className="flex-grow">{children}</main>
-
-            {/* ✅ Footer always at bottom */}
             <Footer />
-            <FloatingButtons />
+            <WhatsAppButton />
+            <ScrollToTopButton />
           </CartProvider>
-          
         </Providers>
       </body>
     </html>
