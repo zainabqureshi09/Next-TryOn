@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -26,21 +25,26 @@ const slugToTitle: Record<string, string> = {
   sunglasses: "Sunglasses",
 };
 
+// Default price range constants
+const DEFAULT_MIN_PRICE = 0;
+const DEFAULT_MAX_PRICE = 1000;
+
 export default function CatalogSlugPage({ params }: Props) {
   const title = slugToTitle[params.slug] || params.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
   // Filters state (aligns with ProductFilters)
   const [filters, setFilters] = useState({
     categories: [params.slug],
-    brands: [],
-    priceRange: [0, 1000] as [number, number],
-    colors: [],
-    materials: [],
-    sizes: [],
+    brands: [] as string[],
+    priceRange: [DEFAULT_MIN_PRICE, DEFAULT_MAX_PRICE] as [number, number],
+    colors: [] as string[],
+    materials: [] as string[],
+    sizes: [] as string[],
     rating: 0,
     inStock: false,
     onSale: false,
   });
+  
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
   const [loading, setLoading] = useState(true);
@@ -48,110 +52,201 @@ export default function CatalogSlugPage({ params }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  // Build query string from filters
-  const buildQuery = (pageNum: number) => {
+  // Build query string from filters - memoized to prevent unnecessary recalculations
+  const buildQuery = useCallback((pageNum: number) => {
     const paramsObj: Record<string, string> = {
       category: params.slug,
       limit: "24",
       page: String(pageNum),
     };
+    
     // Price
-    if (filters.priceRange[0] > 0) paramsObj.priceMin = String(filters.priceRange[0]);
-    if (filters.priceRange[1] < 1000) paramsObj.priceMax = String(filters.priceRange[1]);
+    if (filters.priceRange[0] > DEFAULT_MIN_PRICE) paramsObj.priceMin = String(filters.priceRange[0]);
+    if (filters.priceRange[1] < DEFAULT_MAX_PRICE) paramsObj.priceMax = String(filters.priceRange[1]);
+    
     // Colors
     if (filters.colors.length) paramsObj.colors = filters.colors.join(",");
+    
     // Brands -> style
     if (filters.brands.length) paramsObj.brands = filters.brands.join(",");
+    
     // Materials -> frame
     if (filters.materials.length) paramsObj.materials = filters.materials.join(",");
+    
     // Rating
     if (filters.rating > 0) paramsObj.rating = String(filters.rating);
+    
     // Flags
     if (filters.inStock) paramsObj.inStock = "true";
     if (filters.onSale) paramsObj.onSale = "true";
+    
     // Sort
-    if (sortBy === "price-low") { paramsObj.sort = "price"; paramsObj.order = "asc"; }
-    else if (sortBy === "price-high") { paramsObj.sort = "price"; paramsObj.order = "desc"; }
-    else { paramsObj.sort = "createdAt"; paramsObj.order = "desc"; }
+    if (sortBy === "price-low") { 
+      paramsObj.sort = "price"; 
+      paramsObj.order = "asc"; 
+    } else if (sortBy === "price-high") { 
+      paramsObj.sort = "price"; 
+      paramsObj.order = "desc"; 
+    } else { 
+      paramsObj.sort = "createdAt"; 
+      paramsObj.order = "desc"; 
+    }
 
     const qs = new URLSearchParams(paramsObj).toString();
     return `/api/products?${qs}`;
-  };
+  }, [params.slug, filters, sortBy]);
+
+  // Map API response to Product type
+  const mapProducts = useCallback((products: any[]): Product[] => {
+    return products.map((p) => ({
+      _id: p._id || p.id,
+      id: p._id || p.id,
+      name: p.name || "Untitled",
+      price: p.variations?.[0]?.price ?? p.price ?? 0,
+      description: p.description || "",
+      image: p.variations?.[0]?.image || p.images?.[0] || p.image || "/assets/slideHome.jpg",
+      category: (p.category?.toLowerCase?.() || params.slug) as any,
+      rating: p.rating || 0,
+      inStock: p.inStock ?? true,
+      isOnSale: p.onSale ?? false,
+    }));
+  }, [params.slug]);
 
   // Fetch products for this category + filters/sort
   useEffect(() => {
     let ignore = false;
-    const load = async () => {
+    
+    const loadProducts = async () => {
       try {
         setLoading(true);
         setError(null);
-        setPage(1);
+        
         const resp = await fetch(buildQuery(1));
+        
+        if (!resp.ok) {
+          throw new Error(`Failed to fetch: ${resp.status}`);
+        }
+        
         const data = await resp.json();
-        const mapped: Product[] = (data.products || []).map((p: any) => ({
-          _id: p._id || p.id,
-          id: p._id || p.id,
-          name: p.name || "Untitled",
-          price: p.variations?.[0]?.price ?? p.price ?? 0,
-          description: p.description || "",
-          image: p.variations?.[0]?.image || p.images?.[0] || p.image || "/assets/slideHome.jpg",
-          category: (p.category?.toLowerCase?.() || params.slug) as any,
-        }));
+        
         if (!ignore) {
-          setProducts(mapped);
+          const mappedProducts = mapProducts(data.products || []);
+          setProducts(mappedProducts);
           setTotalPages(data.pagination?.pages || 1);
           setPage(1);
         }
-      } catch (e) {
-        if (!ignore) setError("Failed to load products. Please try again later.");
+      } catch (err) {
+        if (!ignore) {
+          console.error("Error loading products:", err);
+          setError(err instanceof Error ? err.message : "Failed to load products. Please try again later.");
+        }
       } finally {
         if (!ignore) setLoading(false);
       }
     };
-    load();
-    return () => { ignore = true; };
-  }, [params.slug, filters, sortBy]);
+    
+    loadProducts();
+    
+    return () => { 
+      ignore = true; 
+    };
+  }, [buildQuery, mapProducts]);
+
+  // Load more products
+  const loadMoreProducts = async () => {
+    if (loadingMore || page >= totalPages) return;
+    
+    try {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+      const resp = await fetch(buildQuery(nextPage));
+      
+      if (!resp.ok) {
+        throw new Error(`Failed to fetch: ${resp.status}`);
+      }
+      
+      const data = await resp.json();
+      const mappedProducts = mapProducts(data.products || []);
+      
+      setProducts(prev => [...prev, ...mappedProducts]);
+      setPage(nextPage);
+      setTotalPages(data.pagination?.pages || nextPage);
+    } catch (err) {
+      console.error("Error loading more products:", err);
+      setError(err instanceof Error ? err.message : "Failed to load more products.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Clear filters function
+  const clearFilters = useCallback(() => {
+    setFilters({
+      categories: [params.slug],
+      brands: [],
+      priceRange: [DEFAULT_MIN_PRICE, DEFAULT_MAX_PRICE],
+      colors: [],
+      materials: [],
+      sizes: [],
+      rating: 0,
+      inStock: false,
+      onSale: false,
+    });
+  }, [params.slug]);
 
   // Derived data: apply simple filters client-side
   const filteredProducts = useMemo(() => {
-    let items = [...products];
-    // Price
-    items = items.filter(p => p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]);
-    // Rating (not present in simple type, skip for now)
-    // In-stock and On-sale flags would need real fields; skipping client filter for now
-    return items;
+    return products.filter(product => {
+      // Price filter
+      const inPriceRange = product.price >= filters.priceRange[0] && 
+                          product.price <= filters.priceRange[1];
+      
+      // Rating filter
+      const meetsRating = filters.rating === 0 || (product.rating || 0) >= filters.rating;
+      
+      // In stock filter
+      const meetsStock = !filters.inStock || product.inStock;
+      
+      // On sale filter  
+      const meetsSale = !filters.onSale || product.isOnSale;
+      
+      return inPriceRange && meetsRating && meetsStock && meetsSale;
+    });
   }, [products, filters]);
 
-  // Sort
+  // Sort products
   const sortedProducts = useMemo(() => {
     const items = [...filteredProducts];
+    
     switch (sortBy) {
       case "price-low":
-        items.sort((a, b) => a.price - b.price);
-        break;
+        return items.sort((a, b) => a.price - b.price);
       case "price-high":
-        items.sort((a, b) => b.price - a.price);
-        break;
+        return items.sort((a, b) => b.price - a.price);
+      case "rating":
+        return items.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       default:
-        // newest fallback: keep server order or reverse
-        break;
+        // "newest" - keep original order (assumed to be newest first from API)
+        return items;
     }
-    return items;
   }, [filteredProducts, sortBy]);
 
+  // Count active filters
   const activeFiltersCount = useMemo(() => {
-    return (
-      filters.categories.length +
-      filters.brands.length +
-      filters.colors.length +
-      filters.materials.length +
-      filters.sizes.length +
-      (filters.rating > 0 ? 1 : 0) +
-      (filters.inStock ? 1 : 0) +
-      (filters.onSale ? 1 : 0) +
-      (filters.priceRange[0] > 0 || filters.priceRange[1] < 1000 ? 1 : 0)
-    );
+    let count = 0;
+    
+    if (filters.brands.length > 0) count += filters.brands.length;
+    if (filters.colors.length > 0) count += filters.colors.length;
+    if (filters.materials.length > 0) count += filters.materials.length;
+    if (filters.sizes.length > 0) count += filters.sizes.length;
+    if (filters.rating > 0) count += 1;
+    if (filters.inStock) count += 1;
+    if (filters.onSale) count += 1;
+    if (filters.priceRange[0] > DEFAULT_MIN_PRICE || filters.priceRange[1] < DEFAULT_MAX_PRICE) count += 1;
+    
+    return count;
   }, [filters]);
 
   return (
@@ -185,12 +280,18 @@ export default function CatalogSlugPage({ params }: Props) {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" className="lg:hidden" onClick={() => setShowFilters(true)}>
-              <Filter className="w-4 h-4 mr-2" /> Filters {activeFiltersCount > 0 ? <Badge className="ml-2 bg-purple-600 text-white">{activeFiltersCount}</Badge> : null}
+              <Filter className="w-4 h-4 mr-2" /> 
+              Filters 
+              {activeFiltersCount > 0 && (
+                <Badge className="ml-2 bg-purple-600 text-white">{activeFiltersCount}</Badge>
+              )}
             </Button>
-            <span className="text-sm text-muted-foreground hidden lg:inline">{sortedProducts.length} items</span>
+            <span className="text-sm text-muted-foreground hidden lg:inline">
+              {sortedProducts.length} {sortedProducts.length === 1 ? 'item' : 'items'}
+            </span>
           </div>
           <div className="flex items-center gap-3">
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v)}>
+            <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -198,6 +299,7 @@ export default function CatalogSlugPage({ params }: Props) {
                 <SelectItem value="newest">Newest</SelectItem>
                 <SelectItem value="price-low">Price: Low to High</SelectItem>
                 <SelectItem value="price-high">Price: High to Low</SelectItem>
+                <SelectItem value="rating">Highest Rated</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -207,9 +309,9 @@ export default function CatalogSlugPage({ params }: Props) {
           {/* Sidebar filters */}
           <div className="w-80 flex-shrink-0 hidden lg:block">
             <ProductFilters
-              filters={filters as any}
-              onFiltersChange={setFilters as any}
-              onClearFilters={() => setFilters({ ...filters, brands: [], colors: [], materials: [], sizes: [], rating: 0, inStock: false, onSale: false, priceRange: [0, 1000] })}
+              filters={filters}
+              onFiltersChange={setFilters}
+              onClearFilters={clearFilters}
               isOpen={true}
               onToggle={() => setShowFilters(false)}
             />
@@ -224,7 +326,9 @@ export default function CatalogSlugPage({ params }: Props) {
             ) : error ? (
               <Card className="p-12 text-center">
                 <div className="text-muted-foreground mb-2">{error}</div>
-                <Button variant="outline" onClick={() => location.reload()}>Retry</Button>
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  Retry
+                </Button>
               </Card>
             ) : sortedProducts.length === 0 ? (
               <Card className="p-12 text-center">
@@ -240,25 +344,10 @@ export default function CatalogSlugPage({ params }: Props) {
                   <div className="mt-8 flex justify-center">
                     <Button
                       variant="outline"
-                      onClick={async () => {
-                        const next = page + 1;
-                        const resp = await fetch(buildQuery(next));
-                        const data = await resp.json();
-                        const mapped: Product[] = (data.products || []).map((p: any) => ({
-                          _id: p._id || p.id,
-                          id: p._id || p.id,
-                          name: p.name || "Untitled",
-                          price: p.variations?.[0]?.price ?? p.price ?? 0,
-                          description: p.description || "",
-                          image: p.variations?.[0]?.image || p.images?.[0] || p.image || "/assets/slideHome.jpg",
-                          category: (p.category?.toLowerCase?.() || params.slug) as any,
-                        }));
-                        setProducts(prev => [...prev, ...mapped]);
-                        setPage(next);
-                        setTotalPages(data.pagination?.pages || next);
-                      }}
+                      onClick={loadMoreProducts}
+                      disabled={loadingMore}
                     >
-                      Load more
+                      {loadingMore ? "Loading..." : "Load more"}
                     </Button>
                   </div>
                 )}
@@ -274,9 +363,9 @@ export default function CatalogSlugPage({ params }: Props) {
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowFilters(false)} />
           <div className="absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-card shadow-2xl p-4 overflow-y-auto">
             <ProductFilters
-              filters={filters as any}
-              onFiltersChange={setFilters as any}
-              onClearFilters={() => setFilters({ ...filters, brands: [], colors: [], materials: [], sizes: [], rating: 0, inStock: false, onSale: false, priceRange: [0, 1000] })}
+              filters={filters}
+              onFiltersChange={setFilters}
+              onClearFilters={clearFilters}
               isOpen={true}
               onToggle={() => setShowFilters(false)}
             />
