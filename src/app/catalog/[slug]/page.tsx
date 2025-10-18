@@ -19,6 +19,8 @@ import { Filter, ChevronRight, ArrowRight } from "lucide-react";
 
 type Props = { params: { slug: string } };
 
+type SortOption = "newest" | "price-low" | "price-high" | "rating";
+
 const slugToTitle: Record<string, string> = {
   men: "Men",
   women: "Women",
@@ -32,7 +34,7 @@ const DEFAULT_MAX_PRICE = 1000;
 export default function CatalogSlugPage({ params }: Props) {
   const title = slugToTitle[params.slug] || params.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
-  // Filters state (aligns with ProductFilters)
+  // Filters state
   const [filters, setFilters] = useState({
     categories: [params.slug],
     brands: [] as string[],
@@ -46,7 +48,7 @@ export default function CatalogSlugPage({ params }: Props) {
   });
   
   const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState("newest");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -89,6 +91,9 @@ export default function CatalogSlugPage({ params }: Props) {
     } else if (sortBy === "price-high") { 
       paramsObj.sort = "price"; 
       paramsObj.order = "desc"; 
+    } else if (sortBy === "rating") {
+      paramsObj.sort = "rating";
+      paramsObj.order = "desc";
     } else { 
       paramsObj.sort = "createdAt"; 
       paramsObj.order = "desc"; 
@@ -110,7 +115,7 @@ export default function CatalogSlugPage({ params }: Props) {
       category: (p.category?.toLowerCase?.() || params.slug) as any,
       rating: p.rating || 0,
       inStock: p.inStock ?? true,
-      isOnSale: p.onSale ?? false,
+      onSale: p.onSale ?? false,
     }));
   }, [params.slug]);
 
@@ -210,7 +215,7 @@ export default function CatalogSlugPage({ params }: Props) {
       const meetsStock = !filters.inStock || product.inStock;
       
       // On sale filter  
-      const meetsSale = !filters.onSale || product.isOnSale;
+      const meetsSale = !filters.onSale || product.onSale;
       
       return inPriceRange && meetsRating && meetsStock && meetsSale;
     });
@@ -291,7 +296,7 @@ export default function CatalogSlugPage({ params }: Props) {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <Select value={sortBy} onValueChange={setSortBy}>
+            <Select value={sortBy} onValueChange={(v: SortOption) => setSortBy(v)}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
