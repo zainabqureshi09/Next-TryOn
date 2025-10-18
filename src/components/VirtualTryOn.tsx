@@ -21,6 +21,7 @@ import {
   X,
   ShoppingBag,
   ArrowRight,
+  Upload,
 } from "lucide-react";
 import { useImageCapture } from "@/hooks/use-image-capture";
 import toast, { Toaster } from "react-hot-toast";
@@ -29,6 +30,7 @@ import { useCartContext } from "@/contexts/CartContext";
 import { OnboardingModal } from "./ui/onboarding-modal";
 import type { Product } from "@/data/products";
 import Link from "next/link";
+import { ImageUpload } from "@/components/ImageUpload";
 
 // ✅ Enhanced product interface with virtual try-on support
 interface VirtualTryOnProduct {
@@ -62,6 +64,7 @@ export const VirtualTryOn = () => {
   const [isCapturing, setIsCapturing] = useState<boolean>(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
+  const [mode, setMode] = useState<"live" | "photo">("live");
   
   // Loading and error states
   const [isAddingToCart, setIsAddingToCart] = useState<string | null>(null);
@@ -348,7 +351,7 @@ export const VirtualTryOn = () => {
       )}
 
       {/* 🧠 Enhanced Header */}
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-xl sticky top-0 z-50">
+      <header className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -356,16 +359,26 @@ export const VirtualTryOn = () => {
                 <Eye className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">LensVision</h1>
-                <p className="text-sm text-gray-600">AI-Powered Virtual Try-On</p>
+                <h1 className="text-2xl font-bold text-foreground">LensVision</h1>
+                <p className="text-sm text-muted-foreground">AI-Powered Virtual Try-On</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <Badge className="bg-green-100 text-green-700 border-green-200 flex items-center gap-2">
-                  <CameraIcon className="w-4 h-4" />
-                  Live Camera Mode
-                </Badge>
+                <Button
+                  variant={mode === "live" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setMode("live")}
+                >
+                  <CameraIcon className="w-4 h-4 mr-1" /> Live
+                </Button>
+                <Button
+                  variant={mode === "photo" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setMode("photo")}
+                >
+                  <Upload className="w-4 h-4 mr-1" /> Photo
+                </Button>
               </div>
               <div className="flex items-center gap-2">
                 <Link href="/cart" className="relative">
@@ -411,49 +424,63 @@ export const VirtualTryOn = () => {
 
               {/* Camera Area */}
               <div className="relative">
-                <div className="relative w-full aspect-[4/3] bg-gray-900 rounded-b-2xl overflow-hidden">
-                  <Camera ref={cameraRef} selectedGlasses={selectedProduct?.id || ""} />
-                  
-                  {/* Camera Controls Overlay */}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent p-6">
-                    <div className="flex items-center justify-center gap-4">
-                      <Button 
-                        onClick={handleCapture} 
-                        disabled={isCapturing}
-                        size="lg"
-                        className="bg-white text-gray-900 hover:bg-gray-100"
-                      >
-                        {isCapturing ? (
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        ) : (
-                          <CameraIcon className="w-5 h-5 mr-2" />
-                        )}
-                        {isCapturing ? "Capturing..." : "Capture Photo"}
-                      </Button>
-                      
-                      {capturedImage && (
-                        <Button 
-                          onClick={handleSave} 
-                          variant="outline"
-                          size="lg"
-                          className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-                        >
-                          <Download className="w-5 h-5 mr-2" />
-                          Save
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                <div className="relative w-full aspect-[3/4] sm:aspect-[4/3] md:aspect-video bg-black rounded-b-2xl overflow-hidden">
+                  {mode === "live" ? (
+                    <>
+                      <Camera 
+                        ref={cameraRef} 
+                        selectedGlasses={selectedProduct?.id || ""}
+                        onError={() => setMode("photo")}
+                      />
 
-                  {/* Status Badge */}
-                  <div className="absolute top-4 right-4">
-                    <Badge 
-                      variant={isCapturing ? "destructive" : "outline"}
-                      className="bg-black/20 text-white border-white/20"
-                    >
-                      {isCapturing ? "Capturing..." : "Live"}
-                    </Badge>
-                  </div>
+                      {/* Camera Controls Overlay */}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent p-6">
+                        <div className="flex items-center justify-center gap-4">
+                          <Button 
+                            onClick={handleCapture} 
+                            disabled={isCapturing}
+                            size="lg"
+                            className="bg-white text-gray-900 hover:bg-gray-100"
+                          >
+                            {isCapturing ? (
+                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            ) : (
+                              <CameraIcon className="w-5 h-5 mr-2" />
+                            )}
+                            {isCapturing ? "Capturing..." : "Capture Photo"}
+                          </Button>
+                          
+                          {capturedImage && (
+                            <Button 
+                              onClick={handleSave} 
+                              variant="outline"
+                              size="lg"
+                              className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                            >
+                              <Download className="w-5 h-5 mr-2" />
+                              Save
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Status Badge */}
+                      <div className="absolute top-4 right-4">
+                        <Badge 
+                          variant={isCapturing ? "destructive" : "outline"}
+                          className="bg-black/20 text-white border-white/20"
+                        >
+                          {isCapturing ? "Capturing..." : "Live"}
+                        </Badge>
+                      </div>
+                    </>
+                  ) : (
+                    // Photo Mode
+                    <ImageUpload 
+                      selectedGlasses={selectedProduct?.id || "aviator"}
+                      onBack={() => setMode("live")}
+                    />
+                  )}
                 </div>
               </div>
             </div>

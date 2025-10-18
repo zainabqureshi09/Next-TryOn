@@ -1,11 +1,22 @@
 export type Product = {
-  _id: string;
+  _id?: string;
   id: string;
   name: string;
   price: number;
   description: string;
   image?: string;
-  category: "men" | "women" | "sunglasses";
+  category: string;
+  originalPrice?: number;
+  rating?: number;
+  reviewCount?: number;
+  brand?: string;
+  inStock?: boolean;
+  isNew?: boolean;
+  isOnSale?: boolean;
+  freeShipping?: boolean;
+  discount?: number;
+  colors?: string[];
+  sizes?: string[];
 };
 
 export const products: Product[] = [
@@ -17,6 +28,10 @@ export const products: Product[] = [
     description: "Timeless aviator frames with UV protection.",
     image: "/assets/frame1.jpg",
     category: "sunglasses",
+    brand: "LensVision",
+    inStock: true,
+    rating: 4.5,
+    reviewCount: 128,
   },
   {
     _id: "men-minimal-101",
@@ -26,6 +41,10 @@ export const products: Product[] = [
     description: "Sleek minimal frames perfect for professional settings.",
     image: "/assets/homeMen.jpg",
     category: "men",
+    brand: "LensVision",
+    inStock: true,
+    rating: 4.3,
+    reviewCount: 95,
   },
   {
     _id: "women-round-201",
@@ -35,6 +54,10 @@ export const products: Product[] = [
     description: "Vintage-inspired round frames with modern comfort.",
     image: "/assets/female.jpg",
     category: "women",
+    brand: "LensVision",
+    inStock: true,
+    rating: 4.7,
+    reviewCount: 156,
   },
   {
     _id: "men-sport-301",
@@ -44,6 +67,10 @@ export const products: Product[] = [
     description: "Athletic frames designed for active lifestyles.",
     image: "/assets/homeMen.jpg",
     category: "men",
+    brand: "LensVision",
+    inStock: true,
+    rating: 4.6,
+    reviewCount: 87,
   },
   {
     _id: "sunglasses-sport-401",
@@ -53,6 +80,10 @@ export const products: Product[] = [
     description: "Durable wrap-around sunglasses with polarized lenses.",
     image: "/assets/slideHome.jpg",
     category: "sunglasses",
+    brand: "LensVision",
+    inStock: true,
+    rating: 4.4,
+    reviewCount: 67,
   },
   {
     _id: "women-cat-501",
@@ -62,6 +93,10 @@ export const products: Product[] = [
     description: "Sophisticated cat eye frames for elegant style.",
     image: "/assets/female.jpg",
     category: "women",
+    brand: "LensVision",
+    inStock: true,
+    rating: 4.8,
+    reviewCount: 142,
   },
 ];
 

@@ -27,25 +27,26 @@ const ProductCard: React.FC<ProductCardProps> = ({ id, name, price, image, stock
         className="border rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 relative"
       >
         {isOut && (
-          <span className="absolute top-3 left-3 z-10 rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white">
+          <span className="absolute top-3 left-3 z-10 rounded bg-destructive px-2 py-1 text-xs font-semibold text-destructive-foreground">
             {t("product.outOfStock")}
           </span>
         )}
         {isLow && (
-          <span className="absolute top-3 left-3 z-10 rounded bg-amber-500 px-2 py-1 text-xs font-semibold text-white">
+          <span className="absolute top-3 left-3 z-10 rounded bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground">
             {t("product.lowStock")}
           </span>
         )}
-        <Image
-          src={image}
-          alt={name}
-          width={300}
-          height={300}
-          className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-        <div className="p-4 bg-white/90 dark:bg-gray-900/80">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{name}</h3>
-          <p className="text-purple-700 font-bold mt-2">${price.toFixed(2)}</p>
+        <div className="relative aspect-square">
+          <Image
+            src={image}
+            alt={name}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+        <div className="p-4 bg-card/90">
+          <h3 className="text-lg font-semibold text-foreground">{name}</h3>
+          <p className="text-primary font-bold mt-2">${price.toFixed(2)}</p>
         </div>
       </div>
     </Link>

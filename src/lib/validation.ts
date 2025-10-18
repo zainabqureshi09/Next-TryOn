@@ -51,7 +51,7 @@ export const checkoutSchema = z.object({
       name: z.string().min(1),
       price: z.number().nonnegative(),
       qty: z.number().int().positive(),
-      image: z.string().url().nullable().optional().or(z.literal("")).or(z.null()),
+      image: z.union([z.string(), z.literal(""), z.null()]).optional(),
       attributes: z.array(productAttributeSchema).optional(), // New: attributes
     })
   ).min(1),

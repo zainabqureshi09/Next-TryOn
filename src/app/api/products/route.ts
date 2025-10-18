@@ -16,16 +16,53 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const category = url.searchParams.get("category") || undefined;
     const search = url.searchParams.get("search") || undefined;
-    const sort = url.searchParams.get("sort") || "createdAt";
+    const sort = url.searchParams.get("sort") || "createdAt"; // createdAt | price | ratings
     const order = url.searchParams.get("order") || "desc";
     const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
     const limit = Math.max(1, parseInt(url.searchParams.get("limit") || "12", 10));
     const skip = (page - 1) * limit;
 
+    // Additional filters
+    const priceMin = url.searchParams.get("priceMin");
+    const priceMax = url.searchParams.get("priceMax");
+    const colors = url.searchParams.get("colors"); // comma-separated
+    const brands = url.searchParams.get("brands"); // maps to style
+    const materials = url.searchParams.get("materials"); // maps to frame
+    const rating = url.searchParams.get("rating");
+    const inStock = url.searchParams.get("inStock");
+    const onSale = url.searchParams.get("onSale");
+
     // Build filter conditions
     const filter: Record<string, any> = { isActive: true };
     if (category) filter.category = category;
     if (search) filter.name = { $regex: search, $options: "i" };
+
+    if (priceMin || priceMax) {
+      filter.price = {};
+      if (priceMin) filter.price.$gte = Number(priceMin);
+      if (priceMax) filter.price.$lte = Number(priceMax);
+    }
+    if (colors) {
+      const arr = colors.split(",").map((s) => s.trim()).filter(Boolean);
+      if (arr.length) filter.color = { $in: arr };
+    }
+    if (brands) {
+      const arr = brands.split(",").map((s) => s.trim()).filter(Boolean);
+      if (arr.length) filter.style = { $in: arr };
+    }
+    if (materials) {
+      const arr = materials.split(",").map((s) => s.trim()).filter(Boolean);
+      if (arr.length) filter.frame = { $in: arr };
+    }
+    if (rating) {
+      filter.ratings = { $gte: Number(rating) };
+    }
+    if (inStock === "true") {
+      filter.stock = { $gt: 0 };
+    }
+    if (onSale === "true") {
+      filter.discount = { $gt: 0 };
+    }
 
     // Build sort option
     const sortOption: Record<string, 1 | -1> = {};

@@ -48,7 +48,7 @@ export default function Header() {
     { code: "EN", name: "English" },
     { code: "IT", name: "Italiano" },
     { code: "FR", name: "Français" },
-    { code: "De", name: "German" },
+    { code: "DE", name: "German" },
   ];
 
   // Close menu when route changes
@@ -73,7 +73,7 @@ export default function Header() {
   }, [isMenuOpen]);
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white shadow-sm">
+    <header className="sticky top-0 z-40 w-full bg-card shadow-sm">
       {/* Top Bar */}
       <div className="bg-gradient-to-r from-purple-950 via-purple-900 to-pink-600 text-white text-xs sm:text-sm">
         <div className="container mx-auto px-4 flex justify-between items-center h-8">
@@ -93,8 +93,10 @@ export default function Header() {
             <button
               aria-haspopup="menu"
               aria-expanded={isLangOpen}
+              aria-controls="lang-menu"
               className="flex items-center gap-1 text-xs font-medium hover:text-gray-200"
               type="button"
+              onClick={() => setIsLangOpen((v) => !v)}
             >
               {String(currentLanguage).toUpperCase()} <ChevronDown className="w-3 h-3" />
             </button>
@@ -106,7 +108,9 @@ export default function Header() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.14 }}
-                  className="absolute right-0 top-full mt-2 w-36 bg-white border shadow-lg rounded-lg py-2 z-50"
+                  id="lang-menu"
+                  role="menu"
+                  className="absolute right-0 top-full mt-2 w-36 bg-card border shadow-lg rounded-lg py-2 z-50"
                 >
                   {languages.map((lang) => (
                     <button
@@ -115,10 +119,10 @@ export default function Header() {
                         setLanguage(lang.code as any);
                         setIsLangOpen(false);
                       }}
-                      className={`block w-full px-4 py-2 text-sm hover:bg-gray-100 text-left ${
+                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-muted ${
                         String(currentLanguage).toUpperCase() === lang.code
-                          ? "bg-purple-50 text-purple-700"
-                          : "text-gray-700"
+                          ? "bg-secondary/20 text-foreground"
+                          : "text-foreground"
                       }`}
                     >
                       {lang.name}
@@ -132,7 +136,7 @@ export default function Header() {
       </div>
 
       {/* Main Header */}
-      <div className="bg-white">
+      <div className="bg-card">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -172,16 +176,17 @@ export default function Header() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -8 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute left-0 top-full mt-2 w-56 bg-white border shadow-xl rounded-lg py-3 z-50"
+                          className="absolute left-0 top-full mt-2 w-56 bg-card border shadow-xl rounded-lg py-3 z-50"
                         >
-                          <p className="px-4 pb-2 text-xs uppercase font-semibold text-gray-500 border-b">
+                          <p className="px-4 pb-2 text-xs uppercase font-semibold text-muted-foreground border-b">
                             {t("nav.shop")}
                           </p>
                           {item.children.map((child) => (
                             <Link
                               key={child.name}
                               href={child.href}
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="block px-4 py-2 text-sm text-foreground hover:bg-muted"
+                              aria-current={pathname === child.href ? "page" : undefined}
                             >
                               {child.name}
                             </Link>
@@ -194,19 +199,22 @@ export default function Header() {
                   <Link
                     key={item.name}
                     href={item.href!}
+                    aria-current={pathname === item.href ? "page" : undefined}
                     className={`relative text-sm font-medium transition-colors flex-shrink-0 ${
                       pathname === item.href
                         ? "text-pink-600"
-                        : "text-gray-700 hover:text-black"
+                        : "text-foreground hover:opacity-90"
                     }`}
                   >
                     {item.name}
-                    {pathname === item.href && (
-                      <motion.span
-                        layoutId="underline"
-                        className="absolute left-0 -bottom-1 h-0.5 w-full bg-gradient-to-r from-pink-600 to-purple-600 rounded-full"
-                      />
-                    )}
+                    <span
+                      aria-hidden="true"
+                      className={`absolute left-0 -bottom-1 h-0.5 w-full rounded-full transition-all duration-200 ${
+                        pathname === item.href
+                          ? "bg-gradient-to-r from-pink-600 to-purple-600 opacity-100"
+                          : "opacity-0"
+                      }`}
+                    />
                   </Link>
                 )
               )}
@@ -214,9 +222,85 @@ export default function Header() {
 
             {/* Actions */}
             <div className="flex items-center space-x-3 flex-shrink-0">
+              {/* User Authentication */}
+              {status === "loading" ? (
+                <div className="w-8 h-8 animate-pulse bg-muted rounded-full"></div>
+              ) : session ? (
+                <div className="flex items-center space-x-2">
+                  {/* Admin Link */}
+                  {(session.user as any)?.role === "admin" && (
+                    <Link
+                      href="/admin"
+                      className="hidden sm:flex items-center px-3 py-1 text-sm font-medium text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors"
+                    >
+                      <User className="w-4 h-4 mr-1" />
+                      Admin
+                    </Link>
+                  )}
+                  
+                  {/* User Menu */}
+                  <div className="relative group">
+                    <button className="flex items-center space-x-1 text-sm font-medium text-foreground hover:opacity-90 transition-colors">
+                      <User className="w-5 h-5" />
+                      <span className="hidden sm:block">{session.user?.name || 'User'}</span>
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                    
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-card border shadow-lg rounded-lg py-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                      <div className="px-4 py-2 border-b">
+                        <p className="text-sm font-medium text-foreground">{session.user?.name}</p>
+                        <p className="text-xs text-muted-foreground">{session.user?.email}</p>
+                      </div>
+                      
+                      {(session.user as any)?.role === "admin" && (
+                        <Link
+                          href="/admin"
+                          className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        >
+                          <User className="w-4 h-4 inline mr-2" />
+                          Admin Panel
+                        </Link>
+                      )}
+                      
+                      <Link
+                        href="/account"
+                        className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <User className="w-4 h-4 inline mr-2" />
+                        My Account
+                      </Link>
+                      
+                      <Link
+                        href="/account/orders"
+                        className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        My Orders
+                      </Link>
+                      
+                      <button
+                        onClick={() => signOut()}
+                        className="block w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <LogOut className="w-4 h-4 inline mr-2" />
+                        Sign out
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <Link
+                    href="/auth/signin"
+                    className="text-sm font-medium text-foreground hover:opacity-90 transition-colors"
+                  >
+                    Sign in
+                  </Link>
+                </div>
+              )}
+              
               {/* Cart */}
               <Link href="/cart" className="relative" aria-label="Cart">
-                <ShoppingBag className="w-6 h-6 text-gray-700" />
+                <ShoppingBag className="w-6 h-6 text-foreground" />
                 {cartCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-pink-600 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
                     {cartCount}
@@ -228,7 +312,7 @@ export default function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden text-gray-700 hover:bg-gray-100"
+                className="md:hidden text-foreground hover:bg-muted"
                 onClick={() => setIsMenuOpen((v) => !v)}
                 aria-expanded={isMenuOpen}
                 aria-label="Open mobile menu"
@@ -267,7 +351,7 @@ export default function Header() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed right-0 top-0 bottom-0 w-72 max-w-[80vw] bg-white shadow-2xl z-50 flex flex-col"
+              className="fixed right-0 top-0 bottom-0 w-72 max-w-[80vw] bg-card shadow-2xl z-50 flex flex-col"
               aria-label="Mobile menu"
             >
               {/* Header */}
@@ -291,7 +375,7 @@ export default function Header() {
 
               {/* Navigation - Scrollable */}
               <motion.nav
-                className="flex-1 bg-white px-6 py-6 space-y-6 overflow-y-auto"
+                className="flex-1 bg-card px-6 py-6 space-y-6 overflow-y-auto"
                 initial="hidden"
                 animate="show"
                 variants={{
@@ -310,9 +394,9 @@ export default function Header() {
                       className="space-y-2"
                     >
                       <details className="group">
-                        <summary className="flex items-center justify-between cursor-pointer text-lg font-semibold text-gray-800 hover:text-pink-600 transition">
+                        <summary className="flex items-center justify-between cursor-pointer text-lg font-semibold text-foreground hover:text-pink-600 transition">
                           {item.name}
-                          <ChevronDown className="w-4 h-4 text-gray-500 group-open:rotate-180 transition-transform" />
+                          <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform" />
                         </summary>
                         <div className="pl-4 mt-2 space-y-2">
                           {item.children.map((child) => (
@@ -323,7 +407,7 @@ export default function Header() {
                               className={`block text-sm rounded-md px-2 py-1 transition ${
                                 pathname === child.href
                                   ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white"
-                                  : "text-gray-600 hover:bg-gray-100"
+                                  : "text-muted-foreground hover:bg-muted"
                               }`}
                             >
                               {child.name}
@@ -346,7 +430,7 @@ export default function Header() {
                         className={`block text-lg font-medium transition ${
                           pathname === item.href
                             ? "text-pink-600"
-                            : "text-gray-700 hover:text-black"
+                            : "text-foreground hover:opacity-90"
                         }`}
                       >
                         {item.name}
@@ -354,10 +438,75 @@ export default function Header() {
                     </motion.div>
                   )
                 )}
+                
+                {/* Authentication Section */}
+                <motion.div
+                  variants={{
+                    hidden: { opacity: 0, x: 20 },
+                    show: { opacity: 1, x: 0 },
+                  }}
+                  className="pt-6 border-t border-border"
+                >
+                  {session ? (
+                    <div className="space-y-3">
+                      <div className="text-sm text-muted-foreground">
+                        <p className="font-medium">{session.user?.name}</p>
+                        <p className="text-xs">{session.user?.email}</p>
+                      </div>
+                      
+                      {(session.user as any)?.role === "admin" && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setIsMenuOpen(false)}
+                          className="block w-full text-left bg-purple-50 text-purple-700 px-3 py-2 rounded-md text-sm font-medium hover:bg-purple-100 transition-colors"
+                        >
+                          <User className="w-4 h-4 inline mr-2" />
+                          Admin Panel
+                        </Link>
+                      )}
+                      
+                      <Link
+                        href="/account"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="block text-sm text-foreground/80 hover:text-foreground transition"
+                      >
+                        <User className="w-4 h-4 inline mr-2" />
+                        My Account
+                      </Link>
+                      
+                      <Link
+                        href="/account/orders"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="block text-sm text-foreground/80 hover:text-foreground transition"
+                      >
+                        My Orders
+                      </Link>
+                      
+                      <button
+                        onClick={() => {
+                          signOut();
+                          setIsMenuOpen(false);
+                        }}
+                        className="block w-full text-left text-sm text-red-600 hover:text-red-700 transition"
+                      >
+                        <LogOut className="w-4 h-4 inline mr-2" />
+                        Sign out
+                      </button>
+                    </div>
+                  ) : (
+                    <Link
+                      href="/auth/signin"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-3 rounded-md text-center font-medium hover:from-pink-600 hover:to-purple-700 transition"
+                    >
+                      Sign in
+                    </Link>
+                  )}
+                </motion.div>
               </motion.nav>
 
               {/* Footer */}
-              <div className="border-t bg-white px-6 py-4 text-xs text-gray-500">
+              <div className="border-t bg-card px-6 py-4 text-xs text-muted-foreground">
                 © 2025 LensVision. All rights reserved.
               </div>
             </motion.aside>

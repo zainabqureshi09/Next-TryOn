@@ -1,19 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useCart from "@/hooks/use-cart";
 import useTranslation from "@/hooks/use-translation";
 import Link from "next/link";
 import Image from "next/image";
 
-/**
- * 🛒 Cart Page (Next.js 14 + App Router)
- * - Fixes undefined errors and edge cases
- * - Improved subtotal logic and UX
- * - Clean async checkout flow with robust error handling
- */
+type CartItem = {
+  id?: string;
+  _id?: string;
+  name?: string;
+  price?: number | string;
+  qty?: number | string;
+  image?: string | null;
+  frame?: string;
+  [k: string]: any;
+};
+
+type UseCartReturn = {
+  items?: CartItem[];
+  updateItem?: (id: string, payload: Partial<CartItem>) => void;
+  addItem?: (item: CartItem) => void;
+  decrement?: (id: string) => void;
+  removeItem?: (id: string) => void;
+  clear?: () => void;
+  subtotal?: number | (() => number);
+  isLoading?: boolean;
+  error?: string | null;
+};
 
 export default function CartPage() {
+  // Cast to a typed shape but keep safe fallbacks
+  const rawCart = (useCart() as unknown as UseCartReturn) || {};
   const {
     items = [],
     updateItem,
@@ -22,18 +40,49 @@ export default function CartPage() {
     removeItem,
     clear,
     subtotal,
-    isLoading: cartLoading,
+    isLoading: cartLoading = false,
     error: cartError,
-  } = useCart();
+  } = rawCart;
 
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string>(cartError || "");
 
-  // 🧾 Checkout Handler
+  // Safe helper - get numeric price & qty
+  const normalizeItem = (item: CartItem) => ({
+    ...item,
+    id: item.id || item._id || "",
+    _id: item._id || item.id || "",
+    name: item.name || "Product",
+    price: Number(item.price ?? 0) || 0,
+    qty: Math.max(1, Number(item.qty ?? 1) || 1),
+    image: item.image ?? null,
+    frame: item.frame ?? "",
+  });
+
+  // Safe subtotal: supports number or function
+  const calculatedSubtotal = useMemo(() => {
+    if (typeof subtotal === "number") return subtotal;
+    if (typeof subtotal === "function") {
+      try {
+        const s = subtotal();
+        return typeof s === "number" && !Number.isNaN(s) ? s : 0;
+      } catch {
+        return 0;
+      }
+    }
+    // fallback compute from items (in case hook lacks subtotal)
+    return items.reduce((acc, it) => {
+      const n = normalizeItem(it);
+      return acc + n.price * n.qty;
+    }, 0);
+  }, [subtotal, items]);
+
+  // Checkout handler
   const checkout = async () => {
-    if (!items?.length) {
-      alert(t("cart.emptyError" as any) || "Your cart is empty.");
+    if (!items || items.length === 0) {
+      // fallback to a friendly UI alert
+      alert((t("cart.emptyError" as any) as string) || "Your cart is empty.");
       return;
     }
 
@@ -41,20 +90,10 @@ export default function CartPage() {
     setErrorMsg("");
 
     try {
-      // ✅ Format items with proper fallbacks
-      const formattedItems = items.map((item) => ({
-        id: item.id || item._id || "",
-        _id: item._id || item.id || "",
-        name: item.name || "Product",
-        price: Number(item.price) || 0,
-        qty: Number(item.qty) || 1,
-        image: item.image || null,
-        frame: (item as any).frame || "",
-      }));
+      const formattedItems = items.map(normalizeItem);
 
-      // ✅ Validate items
       const invalid = formattedItems.some(
-        (it) => (!it.id && !it._id) || isNaN(it.price) || it.qty <= 0
+        (it) => (!it.id && !it._id) || Number.isNaN(it.price) || it.qty <= 0
       );
       if (invalid) {
         throw new Error(
@@ -62,7 +101,6 @@ export default function CartPage() {
         );
       }
 
-      // ✅ Send to checkout API
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -72,7 +110,12 @@ export default function CartPage() {
         }),
       });
 
-      const responseData = await res.json().catch(() => ({}));
+      let responseData: any = {};
+      try {
+        responseData = await res.json();
+      } catch {
+        responseData = {};
+      }
 
       if (!res.ok) {
         const message =
@@ -88,20 +131,18 @@ export default function CartPage() {
         throw new Error("Missing checkout URL in server response.");
       }
 
-      // ✅ Redirect to Stripe Checkout
+      // redirect to checkout (Stripe or other)
       window.location.href = responseData.url;
     } catch (err: unknown) {
       console.error("Checkout error:", err);
-      const errorMessage = err instanceof Error 
-        ? err.message 
-        : "An unexpected error occurred during checkout.";
-      setErrorMsg(errorMessage);
+      const message = err instanceof Error ? err.message : "Unexpected error.";
+      setErrorMsg(message);
     } finally {
       setLoading(false);
     }
   };
 
-  // 🧺 Empty Cart State
+  // Empty cart UI
   if (!items || items.length === 0) {
     return (
       <section className="max-w-4xl mx-auto px-6 py-16 text-center animate-fadeIn">
@@ -109,7 +150,8 @@ export default function CartPage() {
           {t("cart.empty" as any) || "Your cart is empty"}
         </h1>
         <p className="text-gray-600 mb-8">
-          {t("cart.emptyMessage" as any) || "Find frames you love and try them on."}
+          {t("cart.emptyMessage" as any) ||
+            "Find frames you love and try them on."}
         </p>
         <Link
           href="/catalog"
@@ -121,9 +163,6 @@ export default function CartPage() {
     );
   }
 
-  // Calculate safe subtotal
-  const calculatedSubtotal = subtotal ? subtotal() : 0;
-
   return (
     <section className="max-w-5xl mx-auto px-6 py-12 animate-fadeIn">
       <h1 className="text-3xl font-bold text-purple-800 mb-8">
@@ -131,22 +170,22 @@ export default function CartPage() {
       </h1>
 
       <div className="space-y-6">
-        {items.map((item) => {
-          const itemId = item.id || item._id || "";
-          const itemName = item.name || "Unnamed Product";
-          const itemPrice = Number(item.price) || 0;
-          const itemQty = Number(item.qty) || 1;
+        {items.map((rawItem, index) => {
+          const item = normalizeItem(rawItem);
+          const key = item.id || item._id || `cart-item-${index}`;
 
           return (
             <div
-              key={itemId}
-              className="flex items-center gap-4 border p-4 rounded-xl shadow-sm hover:shadow-md transition-all"
+              key={key}
+              className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border p-4 rounded-xl shadow-sm hover:shadow-md transition-all"
             >
-              {/* 🖼️ Thumbnail */}
+              {/* Thumbnail */}
               {item.image ? (
+                // Next Image requires a valid src — if remote domains are used,
+                // ensure they are in next.config.js images.domains
                 <Image
                   src={item.image}
-                  alt={itemName}
+                  alt={item.name}
                   width={80}
                   height={80}
                   className="w-20 h-20 object-cover rounded-lg"
@@ -157,40 +196,46 @@ export default function CartPage() {
                 </div>
               )}
 
-              {/* 🧾 Details */}
+              {/* Details */}
               <div className="flex-1">
-                <p className="font-semibold">{itemName}</p>
+                <p className="font-semibold">{item.name}</p>
                 <p className="text-purple-700 font-bold">
-                  ${itemPrice.toFixed(2)}
+                  ${Number(item.price).toFixed(2)}
                 </p>
               </div>
 
-              {/* 🔢 Quantity Controls */}
-              <div className="flex items-center gap-2">
+              {/* Quantity Controls */}
+              <div className="flex items-center gap-2 mt-2 sm:mt-0">
                 <button
-                  onClick={() => decrement(itemId)}
+                  onClick={() => (decrement ? decrement(item.id || item._id || "") : undefined)}
                   disabled={loading || cartLoading}
                   className="px-3 py-1 border rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                  aria-label={`${t("cart.decrease" as any) || "Decrease"} ${itemName}`}
+                  aria-label={`${t("cart.decrease" as any) || "Decrease"} ${
+                    item.name
+                  }`}
                 >
                   −
                 </button>
-                <span className="w-8 text-center">{itemQty}</span>
+
+                <span className="w-8 text-center">{item.qty}</span>
+
                 <button
-                  onClick={() => addItem(item)}
+                  onClick={() => (addItem ? addItem(rawItem) : undefined)}
                   disabled={loading || cartLoading}
                   className="px-3 py-1 border rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                  aria-label={`${t("cart.increase" as any) || "Increase"} ${itemName}`}
+                  aria-label={`${t("cart.increase" as any) || "Increase"} ${
+                    item.name
+                  }`}
                 >
                   +
                 </button>
               </div>
 
-              {/* ❌ Remove */}
+              {/* Remove */}
               <button
-                onClick={() => removeItem(itemId)}
+                onClick={() => (removeItem ? removeItem(item.id || item._id || "") : undefined)}
                 disabled={loading || cartLoading}
-                className="px-3 py-1 text-sm text-red-600 hover:underline disabled:opacity-50"
+                className="px-3 py-1 text-sm text-red-600 hover:underline disabled:opacity-50 mt-2 sm:mt-0 self-start sm:self-auto"
               >
                 {t("cart.remove" as any) || "Remove"}
               </button>
@@ -199,10 +244,10 @@ export default function CartPage() {
         })}
       </div>
 
-      {/* 🧮 Footer */}
+      {/* Footer */}
       <div className="mt-10 flex flex-col sm:flex-row items-center justify-between border-t pt-6 gap-4">
         <button
-          onClick={clear}
+          onClick={() => (clear ? clear() : undefined)}
           disabled={loading || cartLoading || items.length === 0}
           className="text-sm text-gray-600 hover:underline disabled:opacity-50"
         >
@@ -227,13 +272,11 @@ export default function CartPage() {
             }`}
           >
             {loading
-              ? t("cart.processing" as any) || "Processing..."
-              : t("cart.checkout" as any) || "Proceed to Checkout"}
+              ? (t("cart.processing" as any) as string) || "Processing..."
+              : (t("cart.checkout" as any) as string) || "Proceed to Checkout"}
           </button>
 
-          {errorMsg && (
-            <p className="text-sm text-red-600 mt-2">{errorMsg}</p>
-          )}
+          {errorMsg && <p className="text-sm text-red-600 mt-2">{errorMsg}</p>}
         </div>
       </div>
     </section>

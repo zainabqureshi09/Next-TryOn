@@ -28,7 +28,6 @@ if (typeof window !== "undefined") {
 import { useEffect, useState, useRef } from "react";
 import type { Results as FaceMeshResults } from "@mediapipe/face_mesh";
 import { FaceMesh } from "@mediapipe/face_mesh";
-import { Camera as MediaPipeCamera } from "@mediapipe/camera_utils";
 
 export interface FaceLandmarks {
   leftEye: { x: number; y: number; z: number };
@@ -44,7 +43,7 @@ export const useFaceTracking = (videoRef: React.RefObject<HTMLVideoElement>) => 
   const [hasError, setHasError] = useState(false);
 
   const faceMeshRef = useRef<FaceMesh | null>(null);
-  const cameraRef = useRef<MediaPipeCamera | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     // ✅ Prevent SSR execution
@@ -116,22 +115,27 @@ export const useFaceTracking = (videoRef: React.RefObject<HTMLVideoElement>) => 
 
         faceMeshRef.current = faceMesh;
 
-        // ✅ Initialize camera
-        const camera = new MediaPipeCamera(videoRef.current!, {
-          onFrame: async () => {
-            if (cancelled || !faceMeshRef.current || !videoRef.current) return;
-            try {
-              await faceMeshRef.current.send({ image: videoRef.current });
-            } catch (err) {
-              console.warn("⚠️ FaceMesh send error:", err);
-            }
-          },
-          width: 640,
-          height: 480,
-        });
+        // ✅ Process frames from existing video stream using rAF loop
+        const processFrame = async () => {
+          if (cancelled || !faceMeshRef.current || !videoRef.current) return;
+          try {
+            await faceMeshRef.current.send({ image: videoRef.current });
+          } catch (err) {
+            // Soft-fail; keep running
+          }
+          rafRef.current = requestAnimationFrame(processFrame);
+        };
 
-        cameraRef.current = camera;
-        camera.start();
+        const startWhenReady = () => {
+          if (!videoRef.current) return;
+          if (videoRef.current.readyState >= 2) {
+            processFrame();
+          } else {
+            videoRef.current.addEventListener("loadeddata", processFrame, { once: true });
+          }
+        };
+
+        startWhenReady();
       } catch (error) {
         console.error("Failed to initialize face tracking:", error);
         setHasError(true);
@@ -144,7 +148,7 @@ export const useFaceTracking = (videoRef: React.RefObject<HTMLVideoElement>) => 
 
     return () => {
       cancelled = true;
-      cameraRef.current?.stop?.();
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       faceMeshRef.current?.close();
       setLandmarks(null);
       setIsDetecting(false);

@@ -20,7 +20,7 @@ export default function ProductGrid({ products }: { products: Product[] }) {
           key={product._id || product.id}
           className="group relative bg-white border rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
         >
-          <Link href={`/product/${product.id}`} className="block aspect-w-1 aspect-h-1 w-full overflow-hidden">
+          <Link href={`/product/${product.id}`} className="block aspect-square w-full overflow-hidden">
             <Image
               src={product.image || "/placeholder.png"}
               alt={product.name}

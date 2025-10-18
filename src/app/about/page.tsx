@@ -5,7 +5,7 @@ import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Card, CardContent } from "@/components/ui/card";
-import { useTranslation } from "@/hooks/use-translation"; // ✅ Fixed import
+import { useTranslation } from "@/hooks/use-translation";
 
 gsap.registerPlugin(ScrollTrigger);
 

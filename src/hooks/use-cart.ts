@@ -96,7 +96,7 @@ const useCart = create<CartState>()(
           const res = await fetch("/api/cart", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ item: newItem }),
+            body: JSON.stringify(newItem),
           });
 
           if (!res.ok) {
@@ -202,9 +202,9 @@ const useCart = create<CartState>()(
         setLoading(true);
         try {
           const res = await fetch("/api/cart", {
-            method: "DELETE",
+            method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ clearAll: true }),
+            body: JSON.stringify({ items: [] }),
           });
           if (!res.ok) throw new Error("Failed to clear cart");
           setError(null);

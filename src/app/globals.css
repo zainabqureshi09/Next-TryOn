@@ -184,3 +184,59 @@
   inset: 0;
   pointer-events: none;
 }
+
+/* -------------------- Responsive Utilities -------------------- */
+/* Touch-friendly targets */
+@media (hover: none) and (pointer: coarse) {
+  button, [role="button"], input[type="button"], input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* Focus management */
+@media (prefers-reduced-motion: no-preference) {
+  :focus-visible {
+    transition: outline-offset 0.2s ease;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .bg-gradient-to-r,
+  .bg-gradient-to-br,
+  .bg-gradient-to-b {
+    background: var(--background);
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  * {
+    background: white !important;
+    color: black !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+}

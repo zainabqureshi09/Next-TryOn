@@ -19,6 +19,7 @@ import { isWebGLAvailable } from "@/utils/webgl-detection";
 
 interface CameraProps {
   selectedGlasses: string;
+  onError?: (message: string) => void;
 }
 
 export interface CameraRef {
@@ -27,13 +28,14 @@ export interface CameraRef {
 }
 
 export const Camera = forwardRef<CameraRef, CameraProps>(
-  ({ selectedGlasses }, ref) => {
+  ({ selectedGlasses, onError }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [webGLSupported, setWebGLSupported] = useState<boolean>(false);
     const [isVideoReady, setIsVideoReady] = useState(false);
+    const [facingMode, setFacingMode] = useState<MediaTrackConstraints["facingMode"]>("user");
 
     // Safe face tracking with error boundary
     const [faceTrackingEnabled, setFaceTrackingEnabled] = useState(true);
@@ -121,22 +123,35 @@ export const Camera = forwardRef<CameraRef, CameraProps>(
       [landmarks, selectedGlasses]
     );
 
-    // Initialize camera
+    // Initialize camera with responsive constraints
     useEffect(() => {
       let activeStream: MediaStream | null = null;
 
       const initCamera = async () => {
         try {
-          const webGLSupport =
-            typeof window !== "undefined" && isWebGLAvailable();
+          const webGLSupport = typeof window !== "undefined" && isWebGLAvailable();
           setWebGLSupported(webGLSupport);
+
+          // Compute responsive constraints
+          const isPortrait = typeof window !== "undefined" && window.innerHeight > window.innerWidth;
+          const idealWidth = isPortrait ? 720 : 1280;
+          const idealHeight = isPortrait ? 1280 : 720;
+
+          // Stop previous stream
+          if (activeStream) {
+            activeStream.getTracks().forEach((t) => t.stop());
+          }
+          if (stream) {
+            stream.getTracks().forEach((t) => t.stop());
+          }
 
           const mediaStream = await navigator.mediaDevices.getUserMedia({
             video: {
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-              facingMode: "user",
+              width: { ideal: idealWidth },
+              height: { ideal: idealHeight },
+              facingMode: typeof facingMode === "string" ? { ideal: facingMode } : facingMode,
             },
+            audio: false,
           });
 
           activeStream = mediaStream;
@@ -146,24 +161,36 @@ export const Camera = forwardRef<CameraRef, CameraProps>(
             videoRef.current.srcObject = mediaStream;
           }
 
+          setError(null);
           setIsLoading(false);
         } catch (err) {
-          setError("Camera access denied. Please enable camera permissions.");
+          const message = "Camera access failed. Please enable permissions or try Photo Mode.";
+          setError(message);
           setIsLoading(false);
+          onError?.(message);
         }
       };
 
       initCamera();
 
+      const handleResize = () => {
+        initCamera();
+      };
+
+      window.addEventListener("orientationchange", handleResize);
+      window.addEventListener("resize", handleResize);
+
       return () => {
+        window.removeEventListener("orientationchange", handleResize);
+        window.removeEventListener("resize", handleResize);
         if (activeStream) {
           activeStream.getTracks().forEach((track) => track.stop());
         }
       };
-    }, []);
+    }, [facingMode]);
 
     return (
-      <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
+      <div className="absolute inset-0 bg-black rounded-lg overflow-hidden">
         {/* Video Stream */}
         <video
           ref={videoRef}
@@ -181,7 +208,7 @@ export const Camera = forwardRef<CameraRef, CameraProps>(
         />
 
         {/* Face Detection Overlay */}
-        <FaceDetection videoRef={videoRef} />
+        <FaceDetection videoRef={videoRef} landmarks={landmarks || null} />
 
         {/* Glasses Overlay */}
         <div className="absolute inset-0 pointer-events-none">
@@ -210,6 +237,17 @@ export const Camera = forwardRef<CameraRef, CameraProps>(
               </Canvas>
             </Suspense>
           )}
+        </div>
+
+        {/* Top Controls and Status */}
+        <div className="absolute top-4 left-4 flex items-center gap-2 z-10">
+          <button
+            aria-label="Flip camera"
+            onClick={() => setFacingMode((prev) => (prev === "user" ? "environment" : "user"))}
+            className="px-3 py-2 rounded-full bg-white/80 text-gray-900 hover:bg-white transition"
+          >
+            Flip
+          </button>
         </div>
 
         {/* Status Indicators */}

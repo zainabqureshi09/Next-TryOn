@@ -29,7 +29,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const { items, customerEmail } = parsed.data;
+    const customerEmail = parsed.data.customerEmail;
+    const items: any[] = Array.isArray((body as any).items)
+      ? (body as any).items
+      : parsed.data.items;
 
     // ✅ Validate items
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -37,7 +40,7 @@ export async function POST(req: Request) {
     }
 
     for (const item of items) {
-      const id = (item as any).id || (item as any)._id;
+      const id = (item as any).id || (item as any)._id || (item as any).productId;
       if (
         !id ||
         typeof item.name !== "string" ||
@@ -76,22 +79,31 @@ export async function POST(req: Request) {
     const userId = (session?.user as any)?.id || null;
     const userEmail = (session?.user as any)?.email || customerEmail;
 
-    // 🧮 Create Stripe line items
-    const line_items = items.map((it: any) => ({
-      quantity: it.qty,
-      price_data: {
-        currency: "usd",
-        product_data: {
-          name: it.name,
-          images: it.image ? [it.image] : [],
-          metadata: {
-            productId: it.id || it._id,
-            frame: it.frame || "",
+    // 🧮 Create Stripe line items (ensure absolute image URLs)
+    const line_items = items.map((it: any) => {
+      const raw = typeof it.image === "string" ? it.image.trim() : "";
+      const imageUrl = raw
+        ? (raw.startsWith("http://") || raw.startsWith("https://")
+            ? raw
+            : `${siteUrl}${raw.startsWith("/") ? raw : `/${raw}`}`)
+        : null;
+
+      return {
+        quantity: it.qty,
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: it.name,
+            images: imageUrl ? [imageUrl] : [],
+            metadata: {
+              productId: it.id || it._id || it.productId,
+              frame: it.frame || "",
+            },
           },
+          unit_amount: Math.round((it.price || 0) * 100),
         },
-        unit_amount: Math.round((it.price || 0) * 100),
-      },
-    }));
+      };
+    });
 
     const subtotal = items.reduce(
       (sum: number, item: any) => sum + (item.price || 0) * item.qty,
@@ -103,20 +115,28 @@ export async function POST(req: Request) {
     const { default: Order } = await import("@/lib/models/Order");
 
     const orderItems = items.map((item: any) => ({
-      productId: item.id || item._id,
+      productId: item.id || item._id || item.productId,
       name: item.name,
       price: item.price,
-      quantity: item.qty,
+      qty: item.qty,
       image: item.image || "",
-      frame: item.frame || "",
     }));
+
+    const tax = 0;
+    const shipping = 0;
+    const total = subtotal + tax + shipping;
 
     const order = await Order.create({
       userId,
       customerEmail: userEmail,
       items: orderItems,
-      total: subtotal,
+      subtotal,
+      tax,
+      shipping,
+      total,
       status: "pending",
+      paymentMethod: "stripe",
+      paymentStatus: "pending",
       stripeSessionId: null, // will be updated after session creation
       shippingAddress: null,
     });
@@ -137,7 +157,7 @@ export async function POST(req: Request) {
         orderId: order._id.toString(),
         items: JSON.stringify(
           items.map((i: any) => ({
-            id: i.id || i._id,
+            id: i.id || i._id || i.productId,
             name: i.name,
             price: i.price,
             qty: i.qty,

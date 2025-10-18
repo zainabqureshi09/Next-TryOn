@@ -1,9 +1,22 @@
 "use client";
 
-import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import ProductGrid from "@/app/shop/components/ProductGrid";
+import type { Product } from "@/data/products";
+import ProductFilters from "@/components/ProductFilters";
+import { Filter, ChevronRight, ArrowRight } from "lucide-react";
 
 type Props = { params: { slug: string } };
 
@@ -13,144 +26,263 @@ const slugToTitle: Record<string, string> = {
   sunglasses: "Sunglasses",
 };
 
-// Map catalog slug -> shop category slug for deep link
-const slugToShopCategory: Record<string, string> = {
-  men: "prescription",
-  women: "prescription",
-  sunglasses: "sunglasses",
-};
-
-const dummyItems: Record<
-  string,
-  { id: string; price: number; image?: string }[]
-> = {
-  men: [
-    { id: "m1", price: 119.99, image: "/assets/homeMen.jpg" },
-    { id: "m2",  price: 139.99, image: "/assets/frame1.jpg" },
-    { id: "m3",  price: 89.99, image: "/assets/slide2home.jpg" },
-  ],
-  women: [
-    { id: "w1", price: 129.99, image: "/assets/slideHome.jpg" },
-    { id: "w2", price: 99.99, image: "/assets/female.jpg" },
-    { id: "w3",  price: 199.99, image: "/assets/frame2.jpg" },
-  ],
-  sunglasses: [
-    { id: "s1", price: 149.99, image: "/assets/frame1.jpg" },
-    { id: "s2", price: 99.99, image: "/assets/slide2home.jpg" },
-    { id: "s3", price: 159.99, image: "/assets/slide3.jpg" },
-  ],
-};
-
 export default function CatalogSlugPage({ params }: Props) {
-  const title =
-    slugToTitle[params.slug] ||
-    params.slug.replace(/-/g, " ").toUpperCase();
-  const items = dummyItems[params.slug] || [];
+  const title = slugToTitle[params.slug] || params.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
-  // cart state
-  const [cart, setCart] = useState<string[]>([]);
-  const [wishlist, setWishlist] = useState<string[]>([]);
+  // Filters state (aligns with ProductFilters)
+  const [filters, setFilters] = useState({
+    categories: [params.slug],
+    brands: [],
+    priceRange: [0, 1000] as [number, number],
+    colors: [],
+    materials: [],
+    sizes: [],
+    rating: 0,
+    inStock: false,
+    onSale: false,
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState("newest");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const addToCart = (id: string) => {
-    if (!cart.includes(id)) {
-      setCart([...cart, id]);
-      alert("✅ Item added to cart!");
-    } else {
-      alert("⚠️ Already in cart!");
-    }
+  // Build query string from filters
+  const buildQuery = (pageNum: number) => {
+    const paramsObj: Record<string, string> = {
+      category: params.slug,
+      limit: "24",
+      page: String(pageNum),
+    };
+    // Price
+    if (filters.priceRange[0] > 0) paramsObj.priceMin = String(filters.priceRange[0]);
+    if (filters.priceRange[1] < 1000) paramsObj.priceMax = String(filters.priceRange[1]);
+    // Colors
+    if (filters.colors.length) paramsObj.colors = filters.colors.join(",");
+    // Brands -> style
+    if (filters.brands.length) paramsObj.brands = filters.brands.join(",");
+    // Materials -> frame
+    if (filters.materials.length) paramsObj.materials = filters.materials.join(",");
+    // Rating
+    if (filters.rating > 0) paramsObj.rating = String(filters.rating);
+    // Flags
+    if (filters.inStock) paramsObj.inStock = "true";
+    if (filters.onSale) paramsObj.onSale = "true";
+    // Sort
+    if (sortBy === "price-low") { paramsObj.sort = "price"; paramsObj.order = "asc"; }
+    else if (sortBy === "price-high") { paramsObj.sort = "price"; paramsObj.order = "desc"; }
+    else { paramsObj.sort = "createdAt"; paramsObj.order = "desc"; }
+
+    const qs = new URLSearchParams(paramsObj).toString();
+    return `/api/products?${qs}`;
   };
 
-  const addToWishlist = (id: string) => {
-    if (!wishlist.includes(id)) {
-      setWishlist([...wishlist, id]);
-      alert("💜 Added to wishlist!");
-    } else {
-      alert("⚠️ Already in wishlist!");
+  // Fetch products for this category + filters/sort
+  useEffect(() => {
+    let ignore = false;
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        setPage(1);
+        const resp = await fetch(buildQuery(1));
+        const data = await resp.json();
+        const mapped: Product[] = (data.products || []).map((p: any) => ({
+          _id: p._id || p.id,
+          id: p._id || p.id,
+          name: p.name || "Untitled",
+          price: p.variations?.[0]?.price ?? p.price ?? 0,
+          description: p.description || "",
+          image: p.variations?.[0]?.image || p.images?.[0] || p.image || "/assets/slideHome.jpg",
+          category: (p.category?.toLowerCase?.() || params.slug) as any,
+        }));
+        if (!ignore) {
+          setProducts(mapped);
+          setTotalPages(data.pagination?.pages || 1);
+          setPage(1);
+        }
+      } catch (e) {
+        if (!ignore) setError("Failed to load products. Please try again later.");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    load();
+    return () => { ignore = true; };
+  }, [params.slug, filters, sortBy]);
+
+  // Derived data: apply simple filters client-side
+  const filteredProducts = useMemo(() => {
+    let items = [...products];
+    // Price
+    items = items.filter(p => p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]);
+    // Rating (not present in simple type, skip for now)
+    // In-stock and On-sale flags would need real fields; skipping client filter for now
+    return items;
+  }, [products, filters]);
+
+  // Sort
+  const sortedProducts = useMemo(() => {
+    const items = [...filteredProducts];
+    switch (sortBy) {
+      case "price-low":
+        items.sort((a, b) => a.price - b.price);
+        break;
+      case "price-high":
+        items.sort((a, b) => b.price - a.price);
+        break;
+      default:
+        // newest fallback: keep server order or reverse
+        break;
     }
-  };
+    return items;
+  }, [filteredProducts, sortBy]);
+
+  const activeFiltersCount = useMemo(() => {
+    return (
+      filters.categories.length +
+      filters.brands.length +
+      filters.colors.length +
+      filters.materials.length +
+      filters.sizes.length +
+      (filters.rating > 0 ? 1 : 0) +
+      (filters.inStock ? 1 : 0) +
+      (filters.onSale ? 1 : 0) +
+      (filters.priceRange[0] > 0 || filters.priceRange[1] < 1000 ? 1 : 0)
+    );
+  }, [filters]);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10">
-      <h1 className="text-3xl font-extrabold tracking-tight mb-8">{title}</h1>
-      <div className="mb-6">
-        <Link
-          href={`/shop${
-            slugToShopCategory[params.slug]
-              ? `?category=${slugToShopCategory[params.slug]}`
-              : ""
-          }`}
-          className="inline-block px-4 py-2 rounded bg-purple-700 text-white hover:bg-purple-800"
-        >
-          Shop this category
-        </Link>
+    <div className="min-h-screen">
+      {/* Hero banner with breadcrumb */}
+      <section className="relative isolate overflow-hidden">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-purple-900 via-purple-800 to-pink-600" />
+        <div className="absolute inset-0 -z-10 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 20% 20%, #fff3, transparent 30%), radial-gradient(circle at 80% 30%, #fff3, transparent 30%)" }} />
+        <div className="max-w-7xl mx-auto px-6 py-12 text-white">
+          <nav className="text-sm mb-4 opacity-90" aria-label="Breadcrumb">
+            <ol className="flex items-center gap-2">
+              <li><Link href="/" className="hover:underline">Home</Link></li>
+              <li><ChevronRight className="w-4 h-4" /></li>
+              <li><Link href="/catalog" className="hover:underline">Catalog</Link></li>
+              <li><ChevronRight className="w-4 h-4" /></li>
+              <li aria-current="page" className="font-medium">{title}</li>
+            </ol>
+          </nav>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">{title} Collection</h1>
+          <p className="mt-2 text-white/90 max-w-2xl">Discover premium eyewear curated for {title.toLowerCase()} — crafted for comfort, durability, and style.</p>
+          <div className="mt-4">
+            <Link href={`/shop?category=${params.slug}`} className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white border border-white/30 px-4 py-2 rounded-lg transition">
+              Browse All in Shop <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Main content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" className="lg:hidden" onClick={() => setShowFilters(true)}>
+              <Filter className="w-4 h-4 mr-2" /> Filters {activeFiltersCount > 0 ? <Badge className="ml-2 bg-purple-600 text-white">{activeFiltersCount}</Badge> : null}
+            </Button>
+            <span className="text-sm text-muted-foreground hidden lg:inline">{sortedProducts.length} items</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v)}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="price-low">Price: Low to High</SelectItem>
+                <SelectItem value="price-high">Price: High to Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="flex gap-8">
+          {/* Sidebar filters */}
+          <div className="w-80 flex-shrink-0 hidden lg:block">
+            <ProductFilters
+              filters={filters as any}
+              onFiltersChange={setFilters as any}
+              onClearFilters={() => setFilters({ ...filters, brands: [], colors: [], materials: [], sizes: [], rating: 0, inStock: false, onSale: false, priceRange: [0, 1000] })}
+              isOpen={true}
+              onToggle={() => setShowFilters(false)}
+            />
+          </div>
+
+          {/* Products grid */}
+          <div className="flex-1">
+            {loading ? (
+              <Card className="p-12 text-center">
+                <div className="text-muted-foreground">Loading {title}...</div>
+              </Card>
+            ) : error ? (
+              <Card className="p-12 text-center">
+                <div className="text-muted-foreground mb-2">{error}</div>
+                <Button variant="outline" onClick={() => location.reload()}>Retry</Button>
+              </Card>
+            ) : sortedProducts.length === 0 ? (
+              <Card className="p-12 text-center">
+                <div className="text-muted-foreground mb-2">No products found</div>
+                <Link href={`/shop?category=${params.slug}`}>
+                  <Button>Browse Shop</Button>
+                </Link>
+              </Card>
+            ) : (
+              <>
+                <ProductGrid products={sortedProducts} />
+                {page < totalPages && (
+                  <div className="mt-8 flex justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        const next = page + 1;
+                        const resp = await fetch(buildQuery(next));
+                        const data = await resp.json();
+                        const mapped: Product[] = (data.products || []).map((p: any) => ({
+                          _id: p._id || p.id,
+                          id: p._id || p.id,
+                          name: p.name || "Untitled",
+                          price: p.variations?.[0]?.price ?? p.price ?? 0,
+                          description: p.description || "",
+                          image: p.variations?.[0]?.image || p.images?.[0] || p.image || "/assets/slideHome.jpg",
+                          category: (p.category?.toLowerCase?.() || params.slug) as any,
+                        }));
+                        setProducts(prev => [...prev, ...mapped]);
+                        setPage(next);
+                        setTotalPages(data.pagination?.pages || next);
+                      }}
+                    >
+                      Load more
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
-      {items.length === 0 ? (
-        <div className="space-y-4">
-          <p className="text-gray-600">No items in this category yet.</p>
-          <Link href="/catalog" className="text-purple-700 hover:underline">
-            ← Back to Catalog
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {items.map((p) => (
-            <div
-              key={p.id}
-              className="rounded-xl overflow-hidden border bg-white hover:shadow-lg transition-shadow"
-            >
-              <div className="relative w-full h-56 bg-gray-100">
-                <Image
-                  src={p.image || "/assets/slide3.jpg"}
-                  alt={p.id}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover"
-                />
-              </div>
-              <div className="p-4 space-y-3">
-                <h3 className="text-lg font-semibold">{p.id}</h3>
-                <p className="text-purple-700 font-bold">${p.price.toFixed(2)}</p>
-
-                <div className="flex gap-2">
-                  {/* View details */}
-                  <Link href={`/product/${p.id}`}>
-                    <Button variant="outline" className="w-full">
-                      View Details
-                    </Button>
-                  </Link>
-
-                  {/* Add to cart */}
-                  <Button
-                    className="w-full bg-purple-600 hover:bg-purple-700"
-                    onClick={() => addToCart(p.id)}
-                  >
-                    Add to Cart
-                  </Button>
-                </div>
-
-                {/* Wishlist */}
-                <Button
-                  variant="ghost"
-                  className="w-full text-sm text-gray-600"
-                  onClick={() => addToWishlist(p.id)}
-                >
-                  ❤️ Add to Wishlist
-                </Button>
-              </div>
-            </div>
-          ))}
+      {/* Mobile filters drawer */}
+      {showFilters && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowFilters(false)} />
+          <div className="absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-card shadow-2xl p-4 overflow-y-auto">
+            <ProductFilters
+              filters={filters as any}
+              onFiltersChange={setFilters as any}
+              onClearFilters={() => setFilters({ ...filters, brands: [], colors: [], materials: [], sizes: [], rating: 0, inStock: false, onSale: false, priceRange: [0, 1000] })}
+              isOpen={true}
+              onToggle={() => setShowFilters(false)}
+            />
+          </div>
         </div>
       )}
-
-      {/* Quick Cart + Wishlist Summary */}
-      <div className="mt-10">
-        <h2 className="text-xl font-bold">Your Cart ({cart.length})</h2>
-        <p className="text-sm text-gray-600">{cart.join(", ") || "No items yet"}</p>
-
-        <h2 className="mt-4 text-xl font-bold">Wishlist ({wishlist.length})</h2>
-        <p className="text-sm text-gray-600">{wishlist.join(", ") || "No items yet"}</p>
-      </div>
     </div>
   );
 }

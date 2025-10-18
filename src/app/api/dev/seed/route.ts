@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     const categories = [
       { name: "Sunglasses", slug: "sunglasses", description: "Protect your eyes from UV rays in style" },
       { name: "Blue Light Glasses", slug: "blue-light", description: "Reduce eye strain from digital screens" },
-      { name: "Eyeglasses", slug: "eyeglasses", description: "Classic prescription and reading glasses" },
+      { name: "Eyeglasses", slug: "eyeglasses", description: "Classic prescription glasses" },
       { name: "Men's Collection", slug: "men", description: "Stylish eyewear for men" },
       { name: "Women's Collection", slug: "women", description: "Elegant eyewear for women" },
     ];

@@ -4,43 +4,43 @@ import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import { checkoutSchema } from "@/lib/validation";
 
-// PayPal SDK temporarily disabled for build
-// import { PayPalApi, CreateOrderRequest, PayPalEnvironment, LogLevel } from '@paypal/paypal-server-sdk';
+function getPaypalBase() {
+  return process.env.NODE_ENV === "production"
+    ? "https://api-m.paypal.com"
+    : "https://api-m.sandbox.paypal.com";
+}
 
-/*
-// PayPal client setup
-function getPayPalClient() {
+async function getAccessToken() {
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-  
+
   if (!clientId || !clientSecret) {
-    throw new Error('PayPal credentials not configured');
+    throw new Error("PayPal credentials not configured");
   }
 
-  const environment = process.env.NODE_ENV === 'production' 
-    ? PayPalEnvironment.Live 
-    : PayPalEnvironment.Sandbox;
+  const tokenUrl = `${getPaypalBase()}/v1/oauth2/token`;
+  const auth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
-  return new PayPalApi({
-    clientCredentialsAuthCredentials: {
-      oAuthClientId: clientId,
-      oAuthClientSecret: clientSecret,
+  const res = await fetch(tokenUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/x-www-form-urlencoded",
     },
-    environment,
-    logLevel: LogLevel.Info,
+    body: new URLSearchParams({ grant_type: "client_credentials" }),
   });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Failed to fetch PayPal access token: ${txt}`);
+  }
+
+  const data: any = await res.json();
+  return data.access_token as string;
 }
-*/
 
 export async function POST(req: Request) {
   try {
-    return NextResponse.json(
-      { error: "PayPal integration temporarily disabled" },
-      { status: 503 }
-    );
-    
-    // PayPal functionality disabled for build
-    /*
     // Parse and validate request body
     const body = await req.json();
     const parsed = checkoutSchema.safeParse(body);
@@ -52,33 +52,22 @@ export async function POST(req: Request) {
       );
     }
 
-    const { items, customerEmail } = parsed.data;
+    const { items, customerEmail } = parsed.data as any;
 
-    // Validate items
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "No items in cart" }, { status: 400 });
     }
 
-    // Get authenticated user
+    // Authenticated user (optional)
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id || null;
     const userEmail = (session?.user as any)?.email || customerEmail;
 
-    // Calculate total
+    // Calculate subtotal
     const subtotal = items.reduce(
-      (sum: number, item: any) => sum + (item.price || 0) * item.qty,
+      (sum: number, item: any) => sum + (Number(item.price) || 0) * Number(item.qty || 0),
       0
     );
-
-    // Create PayPal order items
-    const paypalItems = items.map((item: any) => ({
-      name: item.name,
-      quantity: item.qty.toString(),
-      unit_amount: {
-        currency_code: 'USD',
-        value: (item.price || 0).toFixed(2),
-      },
-    }));
 
     // Save order in MongoDB
     await dbConnect();
@@ -87,37 +76,52 @@ export async function POST(req: Request) {
     const orderItems = items.map((item: any) => ({
       productId: item.id || item._id,
       name: item.name,
-      price: item.price,
-      quantity: item.qty,
+      price: Number(item.price) || 0,
+      qty: Number(item.qty) || 1,
       image: item.image || "",
-      frame: item.frame || "",
     }));
+
+    const tax = 0;
+    const shipping = 0;
+    const total = subtotal + tax + shipping;
 
     const order = await Order.create({
       userId,
       customerEmail: userEmail,
       items: orderItems,
-      total: subtotal,
+      subtotal,
+      tax,
+      shipping,
+      total,
       status: "pending",
       paymentMethod: "paypal",
-      paypalOrderId: null, // will be updated after PayPal order creation
+      paymentStatus: "pending",
+      paypalOrderId: null,
       shippingAddress: null,
     });
 
-    // Create PayPal order
-    const request = new paypal.orders.OrdersCreateRequest();
-    request.prefer("return=representation");
-    request.requestBody({
-      intent: 'CAPTURE',
+    // Build PayPal order payload
+    const paypalItems = items.map((item: any) => ({
+      name: String(item.name),
+      quantity: String(item.qty),
+      unit_amount: {
+        currency_code: "USD",
+        value: (Number(item.price) || 0).toFixed(2),
+      },
+      category: "PHYSICAL_GOODS",
+    }));
+
+    const orderPayload = {
+      intent: "CAPTURE",
       purchase_units: [
         {
           reference_id: order._id.toString(),
           amount: {
-            currency_code: 'USD',
+            currency_code: "USD",
             value: subtotal.toFixed(2),
             breakdown: {
               item_total: {
-                currency_code: 'USD',
+                currency_code: "USD",
                 value: subtotal.toFixed(2),
               },
             },
@@ -126,28 +130,45 @@ export async function POST(req: Request) {
         },
       ],
       application_context: {
-        brand_name: 'LensVision',
-        landing_page: 'BILLING',
-        shipping_preference: 'SET_PROVIDED_ADDRESS',
-        user_action: 'PAY_NOW',
-        return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/success?payment=paypal&order_id=${order._id}`,
-        cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/cancel`,
+        brand_name: "LensVision",
+        landing_page: "BILLING",
+        user_action: "PAY_NOW",
+        return_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/checkout/success?payment=paypal&order_id=${order._id}`,
+        cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/checkout/cancel`,
       },
+    } as const;
+
+    // Get access token and create order
+    const accessToken = await getAccessToken();
+    const res = await fetch(`${getPaypalBase()}/v2/checkout/orders`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(orderPayload),
     });
 
-    const response = await client().execute(request);
+    const data: any = await res.json();
+
+    if (!res.ok || !data?.id) {
+      console.error("PayPal create-order error:", data);
+      return NextResponse.json(
+        { error: data?.message || "Failed to create PayPal order" },
+        { status: 500 }
+      );
+    }
 
     // Update order with PayPal order ID
-    order.paypalOrderId = response.result.id;
+    order.paypalOrderId = data.id;
     await order.save();
 
-    */
-    
+    return NextResponse.json({ success: true, orderID: data.id, mongoOrderId: order._id.toString() });
   } catch (error: any) {
-    console.error("PayPal order creation error:", error);
+    console.error("PayPal create-order error:", error);
     return NextResponse.json(
-      { error: error.message || "PayPal integration temporarily disabled" },
-      { status: 503 }
+      { error: error?.message || "PayPal integration error" },
+      { status: 500 }
     );
   }
 }
