@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+import { NextResponse, NextRequest } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Product from "@/lib/models/Product";
 import { productSchema } from "@/lib/validation";
@@ -12,9 +14,10 @@ interface Params {
 
 import { IProduct } from "@/lib/models/Product"; // Import IProduct
 
-export async function GET(_req: Request, { params }: Params) {
+export async function GET(_req: NextRequest, ctx: any) {
   await dbConnect();
-  const product = await Product.findById(params.id).lean() as any;
+  const params = (ctx && ctx.params) ? await ctx.params : { id: undefined } as any;
+  const product = await Product.findById(params?.id).lean() as any;
   if (!product) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   // For products without explicit variations, create a default one for display purposes
@@ -35,7 +38,7 @@ export async function GET(_req: Request, { params }: Params) {
   return NextResponse.json(product);
 }
 
-export async function PUT(req: Request, { params }: Params) {
+export async function PUT(req: NextRequest, ctx: any) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as any)?.role;
 
@@ -51,7 +54,8 @@ export async function PUT(req: Request, { params }: Params) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const updated = await Product.findByIdAndUpdate(params.id, parsed.data, { new: true }).lean() as any;
+  const params = (ctx && ctx.params) ? await ctx.params : { id: undefined } as any;
+  const updated = await Product.findByIdAndUpdate(params?.id, parsed.data, { new: true }).lean() as any;
   if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   // For products without explicit variations, create a default one for display purposes
@@ -73,7 +77,7 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json(updated);
 }
 
-export async function PATCH(req: Request, { params }: Params) {
+export async function PATCH(req: NextRequest, ctx: any) {
   const allowed = await rateLimit(keyFromRequest(req, "products:patch"), { intervalMs: 60_000, max: 40 });
   if (!allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
@@ -85,8 +89,9 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: "isActive must be a boolean" }, { status: 400 });
   }
   
+  const params = (ctx && ctx.params) ? await ctx.params : { id: undefined } as any;
   const updated = await Product.findByIdAndUpdate(
-    params.id, 
+    params?.id, 
     { $set: body, updatedAt: new Date() }, 
     { new: true }
   ).lean() as any;
@@ -95,7 +100,7 @@ export async function PATCH(req: Request, { params }: Params) {
   return NextResponse.json({ message: "Product updated successfully", product: updated });
 }
 
-export async function DELETE(req: Request, { params }: Params) {
+export async function DELETE(req: NextRequest, ctx: any) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as any)?.role;
 
@@ -106,6 +111,7 @@ export async function DELETE(req: Request, { params }: Params) {
   if (!allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
   await dbConnect();
-  await Product.findByIdAndDelete(params.id);
+  const params = (ctx && ctx.params) ? await ctx.params : { id: undefined } as any;
+  await Product.findByIdAndDelete(params?.id);
   return NextResponse.json({ ok: true });
 }

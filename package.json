@@ -67,8 +67,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.19.14",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
     "@types/three": "^0.180.0",
     "@types/tracking": "^1.1.33",
     "autoprefixer": "^10.4.21",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import React, { useRef, useMemo } from "react";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
 import type { FaceLandmarks } from "@/hooks/useFaceTracking";
@@ -76,12 +76,11 @@ export default function GlassesModel({ glassesType, landmarks }: GlassesModelPro
     };
   }, [landmarks, texture]);
 
-  return (
-    <group ref={groupRef} position={position} rotation={rotation}>
-      <mesh>
-        <planeGeometry args={[width, height]} />
-        <meshBasicMaterial map={texture} transparent opacity={1} />
-      </mesh>
-    </group>
+  return React.createElement('group', 
+    { ref: groupRef, position, rotation },
+    React.createElement('mesh', {},
+      React.createElement('planeGeometry', { args: [width, height] }),
+      React.createElement('meshBasicMaterial', { map: texture, transparent: true, opacity: 1 })
+    )
   );
 }

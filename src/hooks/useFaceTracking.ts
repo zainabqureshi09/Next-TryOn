@@ -37,7 +37,7 @@ export interface FaceLandmarks {
   forehead: { x: number; y: number; z: number };
 }
 
-export const useFaceTracking = (videoRef: React.RefObject<HTMLVideoElement>) => {
+export const useFaceTracking = (videoRef: React.RefObject<HTMLVideoElement | null>) => {
   const [landmarks, setLandmarks] = useState<FaceLandmarks | null>(null);
   const [isDetecting, setIsDetecting] = useState(false);
   const [hasError, setHasError] = useState(false);

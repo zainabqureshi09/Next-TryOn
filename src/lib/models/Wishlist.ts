@@ -51,8 +51,7 @@ const WishlistSchema = new Schema<IWishlist>(
   {
     userId: { 
       type: String, 
-      required: true, 
-      index: true 
+      required: true
     },
     userEmail: { 
       type: String, 

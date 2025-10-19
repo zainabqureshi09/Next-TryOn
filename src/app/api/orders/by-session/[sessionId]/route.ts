@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+import { NextResponse, NextRequest } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Order from "@/lib/models/Order";
 import { getServerSession } from "next-auth";
@@ -7,7 +9,7 @@ import { authOptions } from "@/lib/auth";
 // ====================
 // 📦 GET /api/orders/by-session/[sessionId]
 // ====================
-export async function GET(req: Request, { params }: { params: { sessionId: string } }) {
+export async function GET(_req: NextRequest, ctx: any) {
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
@@ -19,7 +21,8 @@ export async function GET(req: Request, { params }: { params: { sessionId: strin
 
     await dbConnect();
 
-    const order = await Order.findOne({ stripeSessionId: params.sessionId }).lean();
+    const params = (ctx && ctx.params) ? await ctx.params : { sessionId: undefined } as any;
+    const order = await Order.findOne({ stripeSessionId: params?.sessionId }).lean();
 
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
@@ -32,7 +35,7 @@ export async function GET(req: Request, { params }: { params: { sessionId: strin
 
     return NextResponse.json(order);
   } catch (error: any) {
-    console.error(`Error fetching order by session ${params.sessionId}:`, error);
+    console.error(`Error fetching order by session`, error);
     return NextResponse.json(
       { error: error.message || "Failed to fetch order" },
       { status: 500 }

@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+import { NextResponse, NextRequest } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Cart from "@/lib/models/Cart";
 import { getServerSession } from "next-auth";
@@ -26,11 +28,12 @@ function calculateItemCount(items: CartItem[] = []): number {
 }
 
 // --- 🔄 PATCH: Update quantity ---
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, ctx: any) {
   try {
 
     const body = await req.json().catch(() => ({}));
-    const id = params.id;
+    const params = (ctx && ctx.params) ? await ctx.params : { id: undefined } as any;
+    const id = params?.id as string;
     const qty = Number(body.qty);
 
     if (!id) return NextResponse.json({ success: false, error: "Missing item ID" }, { status: 400 });
@@ -83,10 +86,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 }
 
 // --- ❌ DELETE: Remove item or clear all ---
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, ctx: any) {
   try {
 
-    const id = params.id;
+    const params = (ctx && ctx.params) ? await ctx.params : { id: undefined } as any;
+    const id = params?.id as string;
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id || session?.user?.email;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import {
+import React, {
   useRef,
   useEffect,
   useState,
@@ -16,6 +16,16 @@ import { Badge } from "./ui/badge";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import FaceDetection from "./FaceDetection";
 import { isWebGLAvailable } from "@/utils/webgl-detection";
+
+// Inline Three.js type declarations for React 19 compatibility
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      ambientLight: any;
+      directionalLight: any;
+    }
+  }
+}
 
 interface CameraProps {
   selectedGlasses: string;
@@ -39,9 +49,10 @@ export const Camera = forwardRef<CameraRef, CameraProps>(
 
     // Safe face tracking with error boundary
     const [faceTrackingEnabled, setFaceTrackingEnabled] = useState(true);
+    const nullVideoRef = useRef<HTMLVideoElement>(null);
     
     const safeFaceTracking = useFaceTracking(
-      isVideoReady && faceTrackingEnabled ? videoRef : { current: null }
+      isVideoReady && faceTrackingEnabled ? videoRef : nullVideoRef
     );
     
     const landmarks = safeFaceTracking.landmarks;
@@ -229,8 +240,8 @@ export const Camera = forwardRef<CameraRef, CameraProps>(
                 }}
               >
                 <PerspectiveCamera makeDefault position={[0, 0, 1]} />
-                <ambientLight intensity={0.6} />
-                <directionalLight position={[0, 0, 1]} intensity={0.8} />
+                {React.createElement('ambientLight', { intensity: 0.6 })}
+                {React.createElement('directionalLight', { position: [0, 0, 1], intensity: 0.8 })}
                 {landmarks && (
                   <GlassesModel
                     key={selectedGlasses}

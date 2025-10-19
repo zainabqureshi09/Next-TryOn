@@ -13,12 +13,14 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
+// Force dynamic rendering for this page
+export const dynamic = 'force-dynamic';
+
 async function getStats() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   try {
     const res = await fetch(`${baseUrl}/api/admin/stats`, { 
-      cache: "no-store",
-      next: { revalidate: 60 } // Revalidate every minute
+      cache: "no-store"
     });
     
     if (!res.ok) {

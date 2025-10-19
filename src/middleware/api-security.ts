@@ -11,7 +11,7 @@ export async function apiSecurityMiddleware(req: NextRequest) {
   }
 
   // Get client IP for rate limiting
-  const ip = req.ip || req.headers.get('x-forwarded-for') || 'unknown';
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
   
   try {
     // Apply CORS headers for API routes

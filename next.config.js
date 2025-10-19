@@ -41,9 +41,8 @@ const nextConfig = {
       },
     ];
   },
-  experimental: {
-    serverComponentsExternalPackages: ['mongoose'],
-  },
+  // Next 15: moved from experimental.serverComponentsExternalPackages
+  serverExternalPackages: ['mongoose'],
   images: {
     remotePatterns: [
       {
@@ -114,8 +113,7 @@ const nextConfig = {
     '@tensorflow-models/face-landmarks-detection',
     // Add any other packages that need transpilation
   ],
-  // Enable SWC minification for better performance
-  swcMinify: true,
+  // SWC minify is enabled by default in modern Next.js versions
   // Compiler options
   compiler: {
     // Remove console logs in production

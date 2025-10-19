@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from "react";
+import React, { useRef, useState, useCallback, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { PerspectiveCamera } from "@react-three/drei";
 import { Button } from "./ui/button";
@@ -127,8 +127,8 @@ export const ImageUpload = ({ selectedGlasses, onBack }: ImageUploadProps) => {
             <div className="absolute inset-0 pointer-events-none">
               <Canvas className="absolute inset-0">
                 <PerspectiveCamera makeDefault position={[0, 0, 1]} />
-                <ambientLight intensity={0.6} />
-                <directionalLight position={[0, 0, 1]} intensity={0.8} />
+                {React.createElement('ambientLight', { intensity: 0.6 })}
+                {React.createElement('directionalLight', { position: [0, 0, 1], intensity: 0.8 })}
                 {landmarks && (
                   <GlassesModel glassesType={selectedGlasses} landmarks={landmarks} />
                 )}

@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+import { NextResponse, NextRequest } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Order from "@/lib/models/Order";
 import { getServerSession } from "next-auth";
@@ -7,7 +9,7 @@ import { authOptions } from "@/lib/auth";
 // ====================
 // 📦 GET /api/orders/[id]
 // ====================
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, ctx: any) {
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
@@ -19,7 +21,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     await dbConnect();
 
-    const order = await Order.findById(params.id).lean();
+    const params = (ctx && ctx.params) ? await ctx.params : { id: undefined } as any;
+    const order = await Order.findById(params?.id).lean();
 
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
@@ -32,7 +35,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     return NextResponse.json(order);
   } catch (error: any) {
-    console.error(`Error fetching order ${params.id}:`, error);
+    console.error(`Error fetching order`, error);
     return NextResponse.json(
       { error: error.message || "Failed to fetch order" },
       { status: 500 }

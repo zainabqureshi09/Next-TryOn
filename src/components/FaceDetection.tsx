@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import type { FaceLandmarks } from "@/hooks/useFaceTracking";
 
 interface FaceDetectionProps {
-  videoRef: React.RefObject<HTMLVideoElement>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
   landmarks?: FaceLandmarks | null;
   debug?: boolean;
 }

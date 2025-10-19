@@ -5,7 +5,7 @@ import { FaceLandmarks } from "./useFaceTracking";
 
 // Simplified version without MediaPipe to avoid compatibility issues
 export const useImageFaceTracking = (
-  imageRef: React.RefObject<HTMLImageElement>
+  imageRef: React.RefObject<HTMLImageElement | null>
 ) => {
   const [landmarks] = useState<FaceLandmarks | null>(null);
   const [isDetecting] = useState(false);

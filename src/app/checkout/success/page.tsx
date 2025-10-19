@@ -68,9 +68,9 @@ function SuccessPageContent() {
                 </div>
                 <div className="ml-4 flex-grow">
                   <h3 className="font-medium">{item.name}</h3>
-                  <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+<p className="text-sm text-gray-500">Quantity: {item.qty ?? item.quantity}</p>
                 </div>
-                <div className="font-medium">${(item.price * item.quantity).toFixed(2)}</div>
+<div className="font-medium">${(item.price * (item.qty ?? item.quantity ?? 1)).toFixed(2)}</div>
               </div>
             ))}
           </div>

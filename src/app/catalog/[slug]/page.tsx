@@ -17,7 +17,8 @@ import type { Product } from "@/data/products";
 import ProductFilters from "@/components/ProductFilters";
 import { Filter, ChevronRight, ArrowRight } from "lucide-react";
 
-type Props = { params: { slug: string } };
+// Accept any to satisfy Next 15 PageProps variations for client components
+type AnyProps = any;
 
 type SortOption = "newest" | "price-low" | "price-high" | "rating";
 
@@ -31,12 +32,13 @@ const slugToTitle: Record<string, string> = {
 const DEFAULT_MIN_PRICE = 0;
 const DEFAULT_MAX_PRICE = 1000;
 
-export default function CatalogSlugPage({ params }: Props) {
-  const title = slugToTitle[params.slug] || params.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+export default function CatalogSlugPage(props: AnyProps) {
+  const slug = props?.params?.slug as string;
+  const title = slugToTitle[slug] || slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
   // Filters state
   const [filters, setFilters] = useState({
-    categories: [params.slug],
+    categories: [slug],
     brands: [] as string[],
     priceRange: [DEFAULT_MIN_PRICE, DEFAULT_MAX_PRICE] as [number, number],
     colors: [] as string[],
@@ -59,7 +61,7 @@ export default function CatalogSlugPage({ params }: Props) {
   // Build query string from filters - memoized to prevent unnecessary recalculations
   const buildQuery = useCallback((pageNum: number) => {
     const paramsObj: Record<string, string> = {
-      category: params.slug,
+      category: slug,
       limit: "24",
       page: String(pageNum),
     };
@@ -101,7 +103,7 @@ export default function CatalogSlugPage({ params }: Props) {
 
     const qs = new URLSearchParams(paramsObj).toString();
     return `/api/products?${qs}`;
-  }, [params.slug, filters, sortBy]);
+  }, [slug, filters, sortBy]);
 
   // Map API response to Product type
   const mapProducts = useCallback((products: any[]): Product[] => {
@@ -112,12 +114,12 @@ export default function CatalogSlugPage({ params }: Props) {
       price: p.variations?.[0]?.price ?? p.price ?? 0,
       description: p.description || "",
       image: p.variations?.[0]?.image || p.images?.[0] || p.image || "/assets/slideHome.jpg",
-      category: (p.category?.toLowerCase?.() || params.slug) as any,
+      category: (p.category?.toLowerCase?.() || slug) as any,
       rating: p.rating || 0,
       inStock: p.inStock ?? true,
       onSale: p.onSale ?? false,
     }));
-  }, [params.slug]);
+  }, [slug]);
 
   // Fetch products for this category + filters/sort
   useEffect(() => {
@@ -189,7 +191,7 @@ export default function CatalogSlugPage({ params }: Props) {
   // Clear filters function
   const clearFilters = useCallback(() => {
     setFilters({
-      categories: [params.slug],
+      categories: [slug],
       brands: [],
       priceRange: [DEFAULT_MIN_PRICE, DEFAULT_MAX_PRICE],
       colors: [],
@@ -199,7 +201,7 @@ export default function CatalogSlugPage({ params }: Props) {
       inStock: false,
       onSale: false,
     });
-  }, [params.slug]);
+  }, [slug]);
 
   // Derived data: apply simple filters client-side
   const filteredProducts = useMemo(() => {
@@ -273,7 +275,7 @@ export default function CatalogSlugPage({ params }: Props) {
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">{title} Collection</h1>
           <p className="mt-2 text-white/90 max-w-2xl">Discover premium eyewear curated for {title.toLowerCase()} — crafted for comfort, durability, and style.</p>
           <div className="mt-4">
-            <Link href={`/shop?category=${params.slug}`} className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white border border-white/30 px-4 py-2 rounded-lg transition">
+            <Link href={`/shop?category=${slug}`} className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white border border-white/30 px-4 py-2 rounded-lg transition">
               Browse All in Shop <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -338,7 +340,7 @@ export default function CatalogSlugPage({ params }: Props) {
             ) : sortedProducts.length === 0 ? (
               <Card className="p-12 text-center">
                 <div className="text-muted-foreground mb-2">No products found</div>
-                <Link href={`/shop?category=${params.slug}`}>
+                <Link href={`/shop?category=${slug}`}>
                   <Button>Browse Shop</Button>
                 </Link>
               </Card>

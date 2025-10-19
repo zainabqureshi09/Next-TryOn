@@ -21,7 +21,7 @@ async function getProduct(id: string) {
 }
 
 interface ProductPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 function inferCategory(category?: string | null) {
@@ -37,13 +37,19 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { t } = useTranslation();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
 
   useEffect(() => {
-    getProduct(params.id).then((data) => {
+    params.then(setResolvedParams);
+  }, [params]);
+
+  useEffect(() => {
+    if (!resolvedParams?.id) return;
+    getProduct(resolvedParams.id).then((data) => {
       setProduct(data);
       setLoading(false);
     });
-  }, [params.id]);
+  }, [resolvedParams?.id]);
 
   if (loading)
     return (
