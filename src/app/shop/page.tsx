@@ -270,6 +270,10 @@ function ShopPageContent() {
     );
   };
 
+  const handleSortChange = (value: string) => {
+    setSortBy(value as SortOption);
+  };
+
   const activeFiltersCount = 
     filters.categories.length +
     filters.brands.length +
@@ -328,7 +332,7 @@ function ShopPageContent() {
               </Button>
 
               {/* Sort Dropdown */}
-              <Select value={sortBy} onValueChange={(value: string) => setSortBy(value as SortOption)}>
+              <Select value={sortBy} onValueChange={handleSortChange}>
                 <SelectTrigger className="w-[140px]">
                   <ArrowUpDown className="w-4 h-4 mr-2" />
                   <SelectValue />
