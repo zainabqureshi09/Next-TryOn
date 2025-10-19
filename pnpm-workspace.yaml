@@ -2,4 +2,5 @@ ignoredBuiltDependencies:
   - bcrypt
   - core-js
   - core-js-pure
+  - sharp
   - unrs-resolver
