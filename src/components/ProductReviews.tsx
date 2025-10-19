@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,7 +100,7 @@ export default function ProductReviews({ productId, className = "" }: ProductRev
   });
 
   // Fetch reviews
-  const fetchReviews = async (page = 1, append = false) => {
+  const fetchReviews = useCallback(async (page = 1, append = false) => {
     try {
       setLoading(!append);
       
@@ -130,11 +130,11 @@ export default function ProductReviews({ productId, className = "" }: ProductRev
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId, sortBy, ratingFilter, verifiedOnly]);
 
   useEffect(() => {
     fetchReviews();
-  }, [productId, sortBy, ratingFilter, verifiedOnly]);
+  }, [fetchReviews]);
 
   // Submit review
   const handleSubmitReview = async (e: React.FormEvent) => {

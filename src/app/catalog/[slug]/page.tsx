@@ -215,7 +215,7 @@ export default function CatalogSlugPage({ params }: Props) {
       const meetsStock = !filters.inStock || product.inStock;
       
       // On sale filter  
-      const meetsSale = !filters.onSale || product.onSale;
+      const meetsSale = !filters.onSale || product.isOnSale;
       
       return inPriceRange && meetsRating && meetsStock && meetsSale;
     });

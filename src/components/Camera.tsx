@@ -167,7 +167,10 @@ export const Camera = forwardRef<CameraRef, CameraProps>(
           const message = "Camera access failed. Please enable permissions or try Photo Mode.";
           setError(message);
           setIsLoading(false);
-          onError?.(message);
+          // Use callback ref pattern to avoid dependency issues
+          if (onError) {
+            onError(message);
+          }
         }
       };
 
@@ -187,6 +190,7 @@ export const Camera = forwardRef<CameraRef, CameraProps>(
           activeStream.getTracks().forEach((track) => track.stop());
         }
       };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [facingMode]);
 
     return (

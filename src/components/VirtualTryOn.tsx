@@ -31,6 +31,7 @@ import { OnboardingModal } from "./ui/onboarding-modal";
 import type { Product } from "@/data/products";
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // ✅ Enhanced product interface with virtual try-on support
 interface VirtualTryOnProduct {
@@ -427,11 +428,31 @@ export const VirtualTryOn = () => {
                 <div className="relative w-full aspect-[3/4] sm:aspect-[4/3] md:aspect-video bg-black rounded-b-2xl overflow-hidden">
                   {mode === "live" ? (
                     <>
-                      <Camera 
-                        ref={cameraRef} 
-                        selectedGlasses={selectedProduct?.id || ""}
-                        onError={() => setMode("photo")}
-                      />
+                      <ErrorBoundary fallback={({ error, resetError }) => (
+                        <div className="flex flex-col items-center justify-center h-full bg-red-50 text-center p-6">
+                          <div className="text-red-600 mb-4">
+                            <CameraIcon className="w-12 h-12 mx-auto mb-2" />
+                            <h3 className="text-lg font-semibold">Camera Error</h3>
+                            <p className="text-sm">Virtual try-on is temporarily unavailable</p>
+                          </div>
+                          <div className="space-y-2">
+                            <Button onClick={resetError} variant="outline" size="sm">
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              Retry Camera
+                            </Button>
+                            <Button onClick={() => setMode("photo")} size="sm">
+                              <Upload className="w-4 h-4 mr-2" />
+                              Use Photo Mode
+                            </Button>
+                          </div>
+                        </div>
+                      )}>
+                        <Camera 
+                          ref={cameraRef} 
+                          selectedGlasses={selectedProduct?.id || ""}
+                          onError={() => setMode("photo")}
+                        />
+                      </ErrorBoundary>
 
                       {/* Camera Controls Overlay */}
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent p-6">

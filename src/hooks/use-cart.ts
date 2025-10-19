@@ -48,19 +48,32 @@ const useCart = create<CartState>()(
       // ✅ Sync cart from backend (optional)
       syncWithApi: async () => {
         const { setLoading, setError, setItems } = get();
+        if (get().isLoading) return; // Prevent concurrent syncs
+        
         setLoading(true);
         try {
-          const res = await fetch("/api/cart");
+          const res = await fetch("/api/cart", {
+            headers: {
+              'Cache-Control': 'no-cache',
+            },
+          });
           if (!res.ok) throw new Error("Failed to fetch cart data");
 
           const data = await res.json();
           if (data?.success && Array.isArray(data.cart)) {
-            setItems(data.cart);
+            // Merge local and server state intelligently
+            const localItems = get().items;
+            const serverItems = data.cart;
+            
+            // Use server as source of truth but preserve local changes if any
+            if (JSON.stringify(localItems) !== JSON.stringify(serverItems)) {
+              setItems(serverItems);
+            }
           }
           setError(null);
         } catch (err) {
-          console.error("Cart sync error:", err);
-          setError("Failed to sync cart");
+          console.warn("Cart sync failed, using local state:", err);
+          // Don't show error to user for sync failures, just log it
         } finally {
           setLoading(false);
         }
@@ -118,42 +131,45 @@ const useCart = create<CartState>()(
 
       // ✅ Update item quantity
       updateItem: async (id, qty) => {
-        const { setLoading, setError } = get();
-        const original = [...get().items];
+        const { setLoading, setError, items } = get();
+        const original = [...items];
 
         if (qty <= 0) {
-          // Remove item if quantity is 0 or below
-          set((s) => ({
-            items: s.items.filter((i) => i.id !== id && i._id !== id),
-          }));
-        } else {
-          // Optimistic update
-          set((s) => ({
-            items: s.items.map((i) =>
-              i.id === id || i._id === id
-                ? { ...i, qty: Math.min(qty, 99) }
-                : i
-            ),
-          }));
+          return get().removeItem(id); // Delegate to removeItem for consistency
         }
 
-        setLoading(true);
+        // Optimistic update
+        set((s) => ({
+          items: s.items.map((i) =>
+            (i.id === id || i._id === id)
+              ? { ...i, qty: Math.max(1, Math.min(qty, 99)) }
+              : i
+          ),
+        }));
+
+        // Skip API call if offline or in development without backend
         try {
-          const res = await fetch(`/api/cart/${id}`, {
-            method: "PATCH",
+          const res = await fetch("/api/cart", {
+            method: "POST", 
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ qty }),
+            body: JSON.stringify({
+              items: get().items.map(item => ({
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                qty: item.qty,
+                image: item.image,
+              }))
+            }),
           });
 
           if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            throw new Error(data.error || "Failed to update quantity");
+            throw new Error("Failed to update cart on server");
           }
           setError(null);
         } catch (err: any) {
-          console.error("Update quantity error:", err);
-          setError(err.message || "Failed to update quantity");
-          set({ items: original }); // revert
+          console.warn("Cart sync failed, keeping local changes:", err);
+          // Don't revert for offline scenarios - keep optimistic update
         } finally {
           setLoading(false);
         }

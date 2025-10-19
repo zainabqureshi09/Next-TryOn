@@ -19,11 +19,30 @@ export type Product = {
   id?: string;
   name: string;
   title?: string;
+  price: number;
+  originalPrice?: number;
   description?: string;
   category?: string;
+  brand?: string;
   images?: string[]; // Main product images
+  image?: string; // Primary image
   overlayImage?: string | null; // transparent PNG for try-on
-  variations: ProductVariation[]; // Array of product variations
+  variations?: ProductVariation[]; // Array of product variations
+  rating?: number;
+  reviewCount?: number;
+  inStock?: boolean;
+  isNew?: boolean;
+  isOnSale?: boolean;
+  freeShipping?: boolean;
+  discount?: number;
+  colors?: string[];
+  sizes?: string[];
+  virtualTryOn?: boolean;
+  specifications?: Record<string, string>;
+  style?: string;
+  color?: string;
+  frameShape?: string;
+  material?: string;
   isActive?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
