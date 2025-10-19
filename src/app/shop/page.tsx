@@ -328,7 +328,7 @@ function ShopPageContent() {
               </Button>
 
               {/* Sort Dropdown */}
-              <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+              <Select value={sortBy} onValueChange={(value: string) => setSortBy(value as SortOption)}>
                 <SelectTrigger className="w-[140px]">
                   <ArrowUpDown className="w-4 h-4 mr-2" />
                   <SelectValue />
