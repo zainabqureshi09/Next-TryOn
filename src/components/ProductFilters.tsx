@@ -88,7 +88,7 @@ export default function ProductFilters({
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
     }));
@@ -97,40 +97,35 @@ export default function ProductFilters({
   const handleCategoryChange = (categoryId: string, checked: boolean) => {
     const newCategories = checked
       ? [...filters.categories, categoryId]
-      : filters.categories.filter(id => id !== categoryId);
-
+      : filters.categories.filter((id) => id !== categoryId);
     onFiltersChange({ ...filters, categories: newCategories });
   };
 
   const handleCollectionChange = (collectionId: string, checked: boolean) => {
     const newCollections = checked
       ? [...filters.brands, collectionId]
-      : filters.brands.filter(id => id !== collectionId);
-
+      : filters.brands.filter((id) => id !== collectionId);
     onFiltersChange({ ...filters, brands: newCollections });
   };
 
   const handleColorChange = (colorId: string, checked: boolean) => {
     const newColors = checked
       ? [...filters.colors, colorId]
-      : filters.colors.filter(id => id !== colorId);
-
+      : filters.colors.filter((id) => id !== colorId);
     onFiltersChange({ ...filters, colors: newColors });
   };
 
   const handleMaterialChange = (materialId: string, checked: boolean) => {
     const newMaterials = checked
       ? [...filters.materials, materialId]
-      : filters.materials.filter(id => id !== materialId);
-
+      : filters.materials.filter((id) => id !== materialId);
     onFiltersChange({ ...filters, materials: newMaterials });
   };
 
   const handleSizeChange = (sizeId: string, checked: boolean) => {
     const newSizes = checked
       ? [...filters.sizes, sizeId]
-      : filters.sizes.filter(id => id !== sizeId);
-
+      : filters.sizes.filter((id) => id !== sizeId);
     onFiltersChange({ ...filters, sizes: newSizes });
   };
 
@@ -151,7 +146,11 @@ export default function ProductFilters({
         className="flex items-center justify-between w-full text-left text-sm font-medium text-gray-900 hover:text-purple-600 transition-colors"
       >
         {title}
-        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        {isExpanded ? (
+          <ChevronUp className="w-4 h-4" />
+        ) : (
+          <ChevronDown className="w-4 h-4" />
+        )}
       </button>
       {isExpanded && <div className="mt-3 space-y-3">{children}</div>}
     </div>
@@ -192,7 +191,12 @@ export default function ProductFilters({
                 Clear All
               </Button>
             )}
-            <Button variant="ghost" size="sm" onClick={onToggle} className="lg:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggle}
+              className="lg:hidden"
+            >
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -206,25 +210,31 @@ export default function ProductFilters({
           isExpanded={expandedSections.categories}
           onToggle={() => toggleSection("categories")}
         >
-          <div className="space-y-3">
-            {categories.map(category => (
-              <div key={category.id} className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`category-${category.id}`}
-                    checked={filters.categories.includes(category.id)}
-                    onCheckedChange={(checked: boolean | "indeterminate") =>
-                      handleCategoryChange(category.id, checked === true)
-                    }
-                  />
-                  <Label htmlFor={`category-${category.id}`} className="text-sm cursor-pointer">
-                    {category.label}
-                  </Label>
-                </div>
-                <span className="text-xs text-gray-500">({category.count})</span>
+          {categories.map((category) => (
+            <div
+              key={category.id}
+              className="flex items-center justify-between"
+            >
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id={`category-${category.id}`}
+                  checked={filters.categories.includes(category.id)}
+                  onCheckedChange={(checked: boolean | "indeterminate") =>
+                    handleCategoryChange(category.id, checked === true)
+                  }
+                />
+                <Label
+                  htmlFor={`category-${category.id}`}
+                  className="text-sm cursor-pointer"
+                >
+                  {category.label}
+                </Label>
               </div>
-            ))}
-          </div>
+              <span className="text-xs text-gray-500">
+                ({category.count})
+              </span>
+            </div>
+          ))}
         </FilterSection>
 
         {/* Price Range */}
@@ -236,12 +246,14 @@ export default function ProductFilters({
           <div className="space-y-4">
             <Slider
               value={filters.priceRange}
-              onValueChange={value =>
-                onFiltersChange({ ...filters, priceRange: value as [number, number] })
+              onValueChange={(value) =>
+                onFiltersChange({
+                  ...filters,
+                  priceRange: value as [number, number],
+                })
               }
               max={1000}
               step={10}
-              className="w-full"
             />
             <div className="flex items-center justify-between text-sm text-gray-600">
               <span>${filters.priceRange[0]}</span>
@@ -256,25 +268,31 @@ export default function ProductFilters({
           isExpanded={expandedSections.collections}
           onToggle={() => toggleSection("collections")}
         >
-          <div className="space-y-3 max-h-48 overflow-y-auto">
-            {collections.map(collection => (
-              <div key={collection.id} className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`collection-${collection.id}`}
-                    checked={filters.brands.includes(collection.id)}
-                    onCheckedChange={(checked: boolean | "indeterminate") =>
-                      handleCollectionChange(collection.id, checked === true)
-                    }
-                  />
-                  <Label htmlFor={`collection-${collection.id}`} className="text-sm cursor-pointer">
-                    {collection.label}
-                  </Label>
-                </div>
-                <span className="text-xs text-gray-500">({collection.count})</span>
+          {collections.map((collection) => (
+            <div
+              key={collection.id}
+              className="flex items-center justify-between"
+            >
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id={`collection-${collection.id}`}
+                  checked={filters.brands.includes(collection.id)}
+                  onCheckedChange={(checked: boolean | "indeterminate") =>
+                    handleCollectionChange(collection.id, checked === true)
+                  }
+                />
+                <Label
+                  htmlFor={`collection-${collection.id}`}
+                  className="text-sm cursor-pointer"
+                >
+                  {collection.label}
+                </Label>
               </div>
-            ))}
-          </div>
+              <span className="text-xs text-gray-500">
+                ({collection.count})
+              </span>
+            </div>
+          ))}
         </FilterSection>
 
         {/* Colors */}
@@ -284,7 +302,7 @@ export default function ProductFilters({
           onToggle={() => toggleSection("colors")}
         >
           <div className="grid grid-cols-4 gap-3">
-            {colors.map(color => (
+            {colors.map((color) => (
               <div key={color.id} className="flex flex-col items-center">
                 <div
                   className={`w-8 h-8 rounded-full border-2 cursor-pointer transition-all ${
@@ -297,7 +315,9 @@ export default function ProductFilters({
                     handleColorChange(color.id, !filters.colors.includes(color.id))
                   }
                 />
-                <span className="text-xs text-gray-600 mt-1">{color.label}</span>
+                <span className="text-xs text-gray-600 mt-1">
+                  {color.label}
+                </span>
               </div>
             ))}
           </div>
@@ -309,25 +329,31 @@ export default function ProductFilters({
           isExpanded={expandedSections.materials}
           onToggle={() => toggleSection("materials")}
         >
-          <div className="space-y-3">
-            {materials.map(material => (
-              <div key={material.id} className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`material-${material.id}`}
-                    checked={filters.materials.includes(material.id)}
-                    onCheckedChange={(checked: boolean | "indeterminate") =>
-                      handleMaterialChange(material.id, checked === true)
-                    }
-                  />
-                  <Label htmlFor={`material-${material.id}`} className="text-sm cursor-pointer">
-                    {material.label}
-                  </Label>
-                </div>
-                <span className="text-xs text-gray-500">({material.count})</span>
+          {materials.map((material) => (
+            <div
+              key={material.id}
+              className="flex items-center justify-between"
+            >
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id={`material-${material.id}`}
+                  checked={filters.materials.includes(material.id)}
+                  onCheckedChange={(checked: boolean | "indeterminate") =>
+                    handleMaterialChange(material.id, checked === true)
+                  }
+                />
+                <Label
+                  htmlFor={`material-${material.id}`}
+                  className="text-sm cursor-pointer"
+                >
+                  {material.label}
+                </Label>
               </div>
-            ))}
-          </div>
+              <span className="text-xs text-gray-500">
+                ({material.count})
+              </span>
+            </div>
+          ))}
         </FilterSection>
 
         {/* Sizes */}
@@ -336,25 +362,26 @@ export default function ProductFilters({
           isExpanded={expandedSections.sizes}
           onToggle={() => toggleSection("sizes")}
         >
-          <div className="space-y-3">
-            {sizes.map(size => (
-              <div key={size.id} className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`size-${size.id}`}
-                    checked={filters.sizes.includes(size.id)}
-                    onCheckedChange={(checked: boolean | "indeterminate") =>
-                      handleSizeChange(size.id, checked === true)
-                    }
-                  />
-                  <Label htmlFor={`size-${size.id}`} className="text-sm cursor-pointer">
-                    {size.label}
-                  </Label>
-                </div>
-                <span className="text-xs text-gray-500">({size.count})</span>
+          {sizes.map((size) => (
+            <div key={size.id} className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id={`size-${size.id}`}
+                  checked={filters.sizes.includes(size.id)}
+                  onCheckedChange={(checked: boolean | "indeterminate") =>
+                    handleSizeChange(size.id, checked === true)
+                  }
+                />
+                <Label
+                  htmlFor={`size-${size.id}`}
+                  className="text-sm cursor-pointer"
+                >
+                  {size.label}
+                </Label>
               </div>
-            ))}
-          </div>
+              <span className="text-xs text-gray-500">({size.count})</span>
+            </div>
+          ))}
         </FilterSection>
 
         {/* Rating */}
@@ -363,34 +390,34 @@ export default function ProductFilters({
           isExpanded={expandedSections.rating}
           onToggle={() => toggleSection("rating")}
         >
-          <div className="space-y-2">
-            {[4, 3, 2, 1].map(rating => (
-              <div
-                key={rating}
-                className={`flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-gray-50 ${
-                  filters.rating === rating ? "bg-purple-50" : ""
-                }`}
-                onClick={() =>
-                  onFiltersChange({
-                    ...filters,
-                    rating: filters.rating === rating ? 0 : rating,
-                  })
-                }
-              >
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${
-                        i < rating ? "text-yellow-400 fill-current" : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-gray-600">& Up</span>
+          {[4, 3, 2, 1].map((rating) => (
+            <div
+              key={rating}
+              className={`flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-gray-50 ${
+                filters.rating === rating ? "bg-purple-50" : ""
+              }`}
+              onClick={() =>
+                onFiltersChange({
+                  ...filters,
+                  rating: filters.rating === rating ? 0 : rating,
+                })
+              }
+            >
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-4 h-4 ${
+                      i < rating
+                        ? "text-yellow-400 fill-current"
+                        : "text-gray-300"
+                    }`}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+              <span className="text-sm text-gray-600">& Up</span>
+            </div>
+          ))}
         </FilterSection>
 
         {/* Availability */}
