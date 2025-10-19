@@ -246,7 +246,7 @@ export default function ProductFilters({
           <div className="space-y-4">
             <Slider
               value={filters.priceRange}
-              onValueChange={(value) =>
+              onValueChange={(value: number[]) =>
                 onFiltersChange({
                   ...filters,
                   priceRange: value as [number, number],
