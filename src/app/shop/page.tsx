@@ -1,17 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Search, 
-  Filter, 
-  Grid3X3, 
-  List, 
-  SlidersHorizontal, 
-  ChevronDown,
-  ArrowUpDown,
-  X
-} from "lucide-react";
+import { Search, Filter, Grid3X3, List, ArrowUpDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import ProductFilters from "@/components/ProductFilters";
 import ProductCard from "@/components/ProductCard";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 
 // Mock data for LensVision brand products
 const MOCK_PRODUCTS = [
@@ -33,7 +24,8 @@ const MOCK_PRODUCTS = [
     name: "LensVision Classic Aviator",
     price: 129.99,
     originalPrice: 159.99,
-    description: "Timeless aviator frames with UV protection and premium materials. Handcrafted by LensVision.",
+    description:
+      "Timeless aviator frames with UV protection and premium materials. Handcrafted by LensVision.",
     image: "/assets/frame1.jpg",
     category: "sunglasses",
     brand: "LensVision",
@@ -44,13 +36,14 @@ const MOCK_PRODUCTS = [
     isOnSale: true,
     freeShipping: true,
     colors: ["#000000", "#8B4513", "#FFD700"],
-    sizes: ["medium", "large"]
+    sizes: ["medium", "large"],
   },
   {
     id: "2",
     name: "LensVision Modern Rectangle",
     price: 89.99,
-    description: "Sleek rectangular frames perfect for professional settings. Premium LensVision quality.",
+    description:
+      "Sleek rectangular frames perfect for professional settings. Premium LensVision quality.",
     image: "/assets/homeMen.jpg",
     category: "men",
     brand: "LensVision",
@@ -61,13 +54,14 @@ const MOCK_PRODUCTS = [
     isOnSale: false,
     freeShipping: true,
     colors: ["#000000", "#8B4513"],
-    sizes: ["medium"]
+    sizes: ["medium"],
   },
   {
     id: "3",
     name: "LensVision Elegant Cat Eye",
     price: 99.99,
-    description: "Sophisticated cat eye frames with vintage charm. Exclusively designed by LensVision.",
+    description:
+      "Sophisticated cat eye frames with vintage charm. Exclusively designed by LensVision.",
     image: "/assets/female.jpg",
     category: "women",
     brand: "LensVision",
@@ -78,13 +72,14 @@ const MOCK_PRODUCTS = [
     isOnSale: false,
     freeShipping: true,
     colors: ["#000000", "#FF0000", "#FFD700"],
-    sizes: ["small", "medium"]
+    sizes: ["small", "medium"],
   },
   {
     id: "4",
     name: "LensVision Sport Pro",
     price: 149.99,
-    description: "High-performance sports eyewear with advanced materials. Perfect for active lifestyles.",
+    description:
+      "High-performance sports eyewear with advanced materials. Perfect for active lifestyles.",
     image: "/assets/frame1.jpg",
     category: "sport",
     brand: "LensVision",
@@ -95,14 +90,15 @@ const MOCK_PRODUCTS = [
     isOnSale: false,
     freeShipping: true,
     colors: ["#000000", "#FF0000", "#0000FF"],
-    sizes: ["medium", "large"]
+    sizes: ["medium", "large"],
   },
   {
     id: "5",
     name: "LensVision Vintage Round",
     price: 109.99,
     originalPrice: 139.99,
-    description: "Vintage-inspired round frames with modern technology. A LensVision classic.",
+    description:
+      "Vintage-inspired round frames with modern technology. A LensVision classic.",
     image: "/assets/slideHome.jpg",
     category: "vintage",
     brand: "LensVision",
@@ -113,7 +109,7 @@ const MOCK_PRODUCTS = [
     isOnSale: true,
     freeShipping: true,
     colors: ["#8B4513", "#000000", "#FFD700"],
-    sizes: ["small", "medium"]
+    sizes: ["small", "medium"],
   },
 ];
 
@@ -135,8 +131,7 @@ type ViewMode = "grid" | "list";
 function ShopPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  // State management
+
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -156,53 +151,53 @@ function ShopPageContent() {
     onSale: false,
   });
 
-  // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = [...products];
 
-    // Apply search filter
     if (searchQuery) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.brand?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.brand?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    // Apply filters
     if (filters.categories.length > 0) {
-      filtered = filtered.filter(product => 
-        filters.categories.includes(product.category)
+      filtered = filtered.filter((p) =>
+        filters.categories.includes(p.category)
       );
     }
 
     if (filters.brands.length > 0) {
-      filtered = filtered.filter(product => 
-        product.brand && filters.brands.includes(product.brand.toLowerCase().replace(/[^a-z0-9]/g, ''))
+      filtered = filtered.filter(
+        (p) =>
+          p.brand &&
+          filters.brands.includes(
+            p.brand.toLowerCase().replace(/[^a-z0-9]/g, "")
+          )
       );
     }
 
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 1000) {
-      filtered = filtered.filter(product => 
-        product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1]
+      filtered = filtered.filter(
+        (p) =>
+          p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]
       );
     }
 
     if (filters.rating > 0) {
-      filtered = filtered.filter(product => 
-        product.rating && product.rating >= filters.rating
-      );
+      filtered = filtered.filter((p) => p.rating && p.rating >= filters.rating);
     }
 
     if (filters.inStock) {
-      filtered = filtered.filter(product => product.inStock);
+      filtered = filtered.filter((p) => p.inStock);
     }
 
     if (filters.onSale) {
-      filtered = filtered.filter(product => product.isOnSale);
+      filtered = filtered.filter((p) => p.isOnSale);
     }
 
-    // Apply sorting
     switch (sortBy) {
       case "price-low":
         filtered.sort((a, b) => a.price - b.price);
@@ -216,23 +211,16 @@ function ShopPageContent() {
       case "popular":
         filtered.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
         break;
-      case "newest":
-      default:
-        // Keep original order for newest
-        break;
     }
 
     return filtered;
   }, [products, searchQuery, filters, sortBy]);
 
-  // Handler functions
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setSearchQuery(e.target.value);
-  };
 
-  const handleFiltersChange = (newFilters: FilterState) => {
+  const handleFiltersChange = (newFilters: FilterState) =>
     setFilters(newFilters);
-  };
 
   const handleClearFilters = () => {
     setFilters({
@@ -249,11 +237,9 @@ function ShopPageContent() {
     setSearchQuery("");
   };
 
-  const handleAddToWishlist = (productId: string) => {
-    setWishlist(prev => 
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
+  const handleAddToWishlist = (id: string) => {
+    setWishlist((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
 
@@ -262,19 +248,17 @@ function ShopPageContent() {
       alert("You can compare up to 3 products at once");
       return;
     }
-    
-    setCompareList(prev => 
+    setCompareList((prev) =>
       prev.includes(product.id)
-        ? prev.filter(id => id !== product.id)
+        ? prev.filter((id) => id !== product.id)
         : [...prev, product.id]
     );
   };
 
-  const handleSortChange = (value: string) => {
-    setSortBy(value as SortOption);
-  };
+  // ✅ Fixed: Explicitly typed `value` to string
+  const handleSortChange = (value: string) => setSortBy(value as SortOption);
 
-  const activeFiltersCount = 
+  const activeFiltersCount =
     filters.categories.length +
     filters.brands.length +
     filters.colors.length +
@@ -287,14 +271,12 @@ function ShopPageContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header Section */}
       <div className="bg-white border-b sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search Bar */}
             <div className="flex-1 max-w-lg">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   type="text"
                   placeholder="Search glasses, brands, styles..."
@@ -305,7 +287,7 @@ function ShopPageContent() {
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -313,9 +295,7 @@ function ShopPageContent() {
               </div>
             </div>
 
-            {/* Controls */}
             <div className="flex items-center gap-2">
-              {/* Filter Toggle */}
               <Button
                 variant="outline"
                 size="sm"
@@ -331,8 +311,13 @@ function ShopPageContent() {
                 )}
               </Button>
 
-              {/* Sort Dropdown */}
-              <Select value={sortBy} onValueChange={handleSortChange}>
+              {/* ✅ Fixed Type here */}
+              <Select
+                value={sortBy}
+                onValueChange={(value: string) =>
+                  setSortBy(value as SortOption)
+                }
+              >
                 <SelectTrigger className="w-[140px]">
                   <ArrowUpDown className="w-4 h-4 mr-2" />
                   <SelectValue />
@@ -346,7 +331,6 @@ function ShopPageContent() {
                 </SelectContent>
               </Select>
 
-              {/* View Mode Toggle */}
               <div className="hidden sm:flex border rounded-lg p-1">
                 <Button
                   variant={viewMode === "grid" ? "default" : "ghost"}
@@ -370,21 +354,18 @@ function ShopPageContent() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Filters Sidebar */}
           <div className="w-full lg:w-80 flex-shrink-0 hidden lg:block">
             <ProductFilters
               filters={filters}
               onFiltersChange={handleFiltersChange}
               onClearFilters={handleClearFilters}
-              isOpen={true}
+              isOpen
               onToggle={() => setShowFilters(!showFilters)}
             />
           </div>
 
-          {/* Mobile Filters Drawer */}
           {showFilters && (
             <div className="lg:hidden">
               <ProductFilters
@@ -397,10 +378,8 @@ function ShopPageContent() {
             </div>
           )}
 
-          {/* Products Section */}
           <div className="flex-1">
-            {/* Results Header */}
-              <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
                 <h1 className="text-2xl font-bold text-foreground">
                   Eyewear Collection
@@ -411,53 +390,6 @@ function ShopPageContent() {
               </div>
             </div>
 
-            {/* Active Filters */}
-            {(activeFiltersCount > 0 || searchQuery) && (
-              <div className="flex flex-wrap items-center gap-2 mb-6 p-4 bg-card rounded-lg border">
-                <span className="text-sm font-medium text-foreground">Active filters:</span>
-                
-                {searchQuery && (
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                    Search: &quot;{searchQuery}&quot;
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="ml-1 hover:text-red-600"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                )}
-                
-                {filters.categories.length > 0 && (
-                  <Badge variant="secondary">
-                    Categories: {filters.categories.length}
-                  </Badge>
-                )}
-                
-                {filters.brands.length > 0 && (
-                  <Badge variant="secondary">
-                    Brands: {filters.brands.length}
-                  </Badge>
-                )}
-                
-                {(filters.priceRange[0] > 0 || filters.priceRange[1] < 1000) && (
-                  <Badge variant="secondary">
-                    Price: ${filters.priceRange[0]} - ${filters.priceRange[1]}
-                  </Badge>
-                )}
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearFilters}
-                  className="text-purple-600 hover:text-purple-700 ml-2"
-                >
-                  Clear All
-                </Button>
-              </div>
-            )}
-
-            {/* Products Grid/List */}
             {filteredAndSortedProducts.length === 0 ? (
               <Card className="p-12 text-center">
                 <div className="text-muted-foreground mb-4">
@@ -475,10 +407,11 @@ function ShopPageContent() {
               </Card>
             ) : (
               <div
-                className={`grid gap-6 ${viewMode === "grid"
-                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                  : "grid-cols-1"
-                  }`}
+                className={`grid gap-6 ${
+                  viewMode === "grid"
+                    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                    : "grid-cols-1"
+                }`}
               >
                 {filteredAndSortedProducts.map((product) => (
                   <ProductCard
@@ -487,7 +420,7 @@ function ShopPageContent() {
                     onAddToWishlist={handleAddToWishlist}
                     isInWishlist={wishlist.includes(product.id)}
                     onCompare={handleAddToCompare}
-                    showCompare={true}
+                    showCompare
                     layout={viewMode}
                   />
                 ))}
@@ -496,55 +429,22 @@ function ShopPageContent() {
           </div>
         </div>
       </div>
-
-      {/* Compare Bar */}
-      {compareList.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg p-4 z-40">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <span className="font-medium">Compare ({compareList.length}/3)</span>
-              <div className="flex gap-2">
-                {compareList.map((productId) => {
-                  const product = products.find(p => p.id === productId);
-                  return product ? (
-                    <div key={productId} className="flex items-center gap-2 bg-muted px-3 py-1 rounded">
-                      <span className="text-sm text-foreground">{product.name}</span>
-                      <button
-                        onClick={() => setCompareList(prev => prev.filter(id => id !== productId))}
-                        className="text-muted-foreground hover:text-red-600"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ) : null;
-                })}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setCompareList([])}>
-                Clear
-              </Button>
-              <Button disabled={compareList.length < 2}>
-                Compare Now
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
 export default function ShopPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading products...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading products...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <ShopPageContent />
     </Suspense>
   );
