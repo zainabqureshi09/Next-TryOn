@@ -69,6 +69,8 @@ const sizes = [
   { id: "xlarge", label: "X-Large (57mm+)", count: 87 },
 ];
 
+type CheckedState = boolean | "indeterminate";
+
 export default function ProductFilters({
   filters,
   onFiltersChange,
@@ -94,15 +96,15 @@ export default function ProductFilters({
     }));
   };
 
-  const handleCategoryChange = (categoryId: string, checked: boolean) => {
-    const newCategories = checked
+  const handleCategoryChange = (categoryId: string, checked: CheckedState) => {
+    const newCategories = checked === true
       ? [...filters.categories, categoryId]
       : filters.categories.filter((id) => id !== categoryId);
     onFiltersChange({ ...filters, categories: newCategories });
   };
 
-  const handleCollectionChange = (collectionId: string, checked: boolean) => {
-    const newCollections = checked
+  const handleCollectionChange = (collectionId: string, checked: CheckedState) => {
+    const newCollections = checked === true
       ? [...filters.brands, collectionId]
       : filters.brands.filter((id) => id !== collectionId);
     onFiltersChange({ ...filters, brands: newCollections });
@@ -115,15 +117,15 @@ export default function ProductFilters({
     onFiltersChange({ ...filters, colors: newColors });
   };
 
-  const handleMaterialChange = (materialId: string, checked: boolean) => {
-    const newMaterials = checked
+  const handleMaterialChange = (materialId: string, checked: CheckedState) => {
+    const newMaterials = checked === true
       ? [...filters.materials, materialId]
       : filters.materials.filter((id) => id !== materialId);
     onFiltersChange({ ...filters, materials: newMaterials });
   };
 
-  const handleSizeChange = (sizeId: string, checked: boolean) => {
-    const newSizes = checked
+  const handleSizeChange = (sizeId: string, checked: CheckedState) => {
+    const newSizes = checked === true
       ? [...filters.sizes, sizeId]
       : filters.sizes.filter((id) => id !== sizeId);
     onFiltersChange({ ...filters, sizes: newSizes });
@@ -219,8 +221,8 @@ export default function ProductFilters({
                 <Checkbox
                   id={`category-${category.id}`}
                   checked={filters.categories.includes(category.id)}
-                  onCheckedChange={(checked: boolean | "indeterminate") =>
-                    handleCategoryChange(category.id, checked === true)
+                  onCheckedChange={(checked: CheckedState) =>
+                    handleCategoryChange(category.id, checked)
                   }
                 />
                 <Label
@@ -277,8 +279,8 @@ export default function ProductFilters({
                 <Checkbox
                   id={`collection-${collection.id}`}
                   checked={filters.brands.includes(collection.id)}
-                  onCheckedChange={(checked: boolean | "indeterminate") =>
-                    handleCollectionChange(collection.id, checked === true)
+                  onCheckedChange={(checked: CheckedState) =>
+                    handleCollectionChange(collection.id, checked)
                   }
                 />
                 <Label
@@ -338,8 +340,8 @@ export default function ProductFilters({
                 <Checkbox
                   id={`material-${material.id}`}
                   checked={filters.materials.includes(material.id)}
-                  onCheckedChange={(checked: boolean | "indeterminate") =>
-                    handleMaterialChange(material.id, checked === true)
+                  onCheckedChange={(checked: CheckedState) =>
+                    handleMaterialChange(material.id, checked)
                   }
                 />
                 <Label
@@ -368,8 +370,8 @@ export default function ProductFilters({
                 <Checkbox
                   id={`size-${size.id}`}
                   checked={filters.sizes.includes(size.id)}
-                  onCheckedChange={(checked: boolean | "indeterminate") =>
-                    handleSizeChange(size.id, checked === true)
+                  onCheckedChange={(checked: CheckedState) =>
+                    handleSizeChange(size.id, checked)
                   }
                 />
                 <Label
@@ -431,7 +433,7 @@ export default function ProductFilters({
               <Checkbox
                 id="in-stock"
                 checked={filters.inStock}
-                onCheckedChange={(checked: boolean | "indeterminate") =>
+                onCheckedChange={(checked: CheckedState) =>
                   onFiltersChange({ ...filters, inStock: checked === true })
                 }
               />
@@ -443,7 +445,7 @@ export default function ProductFilters({
               <Checkbox
                 id="on-sale"
                 checked={filters.onSale}
-                onCheckedChange={(checked: boolean | "indeterminate") =>
+                onCheckedChange={(checked: CheckedState) =>
                   onFiltersChange({ ...filters, onSale: checked === true })
                 }
               />
